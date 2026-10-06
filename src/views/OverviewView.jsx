@@ -135,11 +135,11 @@ export default function OverviewView({
 
   // Risk Score Distribution Histogram Data (5 Color-Coded Bands)
   const distributionData = [
-    { band: '0-20', label: 'Low', count: 642, color: 'var(--risk-low)' },
-    { band: '20-40', label: 'Low-Med', count: 388, color: 'var(--chart-1)' },
-    { band: '40-60', label: 'Medium', count: 184, color: 'var(--risk-medium)' },
-    { band: '60-80', label: 'High', count: 52, color: 'var(--risk-high)' },
-    { band: '80-100', label: 'Critical', count: 18, color: 'var(--risk-critical)' }
+    { band: '0-20', label: 'Low', count: 642, color: '#10B981' },
+    { band: '20-40', label: 'Low-Med', count: 388, color: '#06B6D4' },
+    { band: '40-60', label: 'Medium', count: 184, color: '#3B82F6' },
+    { band: '60-80', label: 'High', count: 52, color: '#F59E0B' },
+    { band: '80-100', label: 'Critical', count: 18, color: '#EF4444' }
   ];
 
   const recentCases = liveCases.slice(0, 5);
@@ -282,22 +282,27 @@ export default function OverviewView({
               3 Online
             </Badge>
           </div>
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginTop: '6px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '6px' }}>
             <div
               style={{
                 fontSize: 'var(--text-2xl)',
                 fontWeight: 700,
                 fontFamily: 'var(--font-mono)',
                 color: 'var(--text-primary)',
-                letterSpacing: '-0.02em'
+                letterSpacing: '-0.02em',
+                whiteSpace: 'nowrap'
               }}
             >
-              3 / 3
+              3 <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', fontWeight: 500 }}>/ 3</span>
             </div>
-            <Sparkline data={[3, 3, 3, 3, 3, 3, 3]} color="var(--success)" width={72} height={24} />
+            <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+              <span title="Bank A (Online)" style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--success)', display: 'inline-block', boxShadow: '0 0 6px var(--success)' }} />
+              <span title="Insurer B (Online)" style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--success)', display: 'inline-block', boxShadow: '0 0 6px var(--success)' }} />
+              <span title={quarantinedLender ? 'Lender C (Quarantined)' : 'Lender C (Online)'} style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: quarantinedLender ? 'var(--danger)' : 'var(--success)', display: 'inline-block', boxShadow: quarantinedLender ? '0 0 6px var(--danger)' : '0 0 6px var(--success)' }} />
+            </div>
           </div>
-          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: '4px' }}>
-            Bank A, Insurer B, Lender C
+          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: '6px' }}>
+            Bank A • Insurer B • {quarantinedLender ? <strong style={{ color: 'var(--danger)' }}>Lender C (Quarantined)</strong> : 'Lender C'}
           </div>
         </Card>
 
@@ -369,21 +374,21 @@ export default function OverviewView({
           title="Cross-Institution Risk Inquiries & Alert Signals"
           subtitle="Chronological volume of local inquiries vs synthesized collaborative alerts"
           action={
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
-                <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--chart-1)' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#3B82F6' }} />
                 Bank A
               </span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
-                <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--chart-2)' }} />
+              <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#06B6D4' }} />
                 Insurer B
               </span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
-                <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--chart-3)' }} />
+              <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#F59E0B' }} />
                 Lender C
               </span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: 'var(--text-xs)', color: 'var(--text-primary)', fontWeight: 600 }}>
-                <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--chart-4)' }} />
+              <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: 'var(--text-xs)', color: '#F87171', fontWeight: 600 }}>
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#EF4444' }} />
                 Joint Flag
               </span>
             </div>
@@ -394,30 +399,30 @@ export default function OverviewView({
               <AreaChart data={alertsChartData} margin={{ top: 8, right: 10, left: -24, bottom: 0 }}>
                 <defs>
                   <linearGradient id="gradBank" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.25} />
+                    <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.28} />
                     <stop offset="95%" stopColor="#3B82F6" stopOpacity={0.0} />
                   </linearGradient>
                   <linearGradient id="gradInsurer" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#22D3EE" stopOpacity={0.25} />
-                    <stop offset="95%" stopColor="#22D3EE" stopOpacity={0.0} />
+                    <stop offset="5%" stopColor="#06B6D4" stopOpacity={0.28} />
+                    <stop offset="95%" stopColor="#06B6D4" stopOpacity={0.0} />
                   </linearGradient>
                   <linearGradient id="gradLender" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#FBBF24" stopOpacity={0.25} />
-                    <stop offset="95%" stopColor="#FBBF24" stopOpacity={0.0} />
+                    <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.28} />
+                    <stop offset="95%" stopColor="#F59E0B" stopOpacity={0.0} />
                   </linearGradient>
                   <linearGradient id="gradCollab" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#FB7185" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="#FB7185" stopOpacity={0.0} />
+                    <stop offset="5%" stopColor="#EF4444" stopOpacity={0.35} />
+                    <stop offset="95%" stopColor="#EF4444" stopOpacity={0.0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid stroke="var(--chart-grid)" strokeDasharray="3 3" vertical={false} />
+                <CartesianGrid stroke="rgba(255, 255, 255, 0.07)" strokeDasharray="2 3" vertical={false} />
                 <XAxis dataKey="time" stroke="var(--text-muted)" fontSize={11} tickLine={false} />
                 <YAxis stroke="var(--text-muted)" fontSize={11} tickLine={false} />
                 <RechartsTooltip content={<CustomChartTooltip />} />
-                <Area type="monotone" dataKey="bankA" name="Bank A" stroke="#3B82F6" strokeWidth={1.6} fill="url(#gradBank)" />
-                <Area type="monotone" dataKey="insurerB" name="Insurer B" stroke="#22D3EE" strokeWidth={1.6} fill="url(#gradInsurer)" />
-                <Area type="monotone" dataKey="lenderC" name="Lender C" stroke="#FBBF24" strokeWidth={1.6} fill="url(#gradLender)" />
-                <Area type="monotone" dataKey="collaborativeAlerts" name="Joint Risk Flag" stroke="#FB7185" strokeWidth={2.2} fill="url(#gradCollab)" />
+                <Area type="monotone" dataKey="bankA" name="Bank A" stroke="#3B82F6" strokeWidth={1.8} fill="url(#gradBank)" />
+                <Area type="monotone" dataKey="insurerB" name="Insurer B" stroke="#06B6D4" strokeWidth={1.8} fill="url(#gradInsurer)" />
+                <Area type="monotone" dataKey="lenderC" name="Lender C" stroke="#F59E0B" strokeWidth={1.8} fill="url(#gradLender)" />
+                <Area type="monotone" dataKey="collaborativeAlerts" name="Joint Risk Flag" stroke="#EF4444" strokeWidth={2.4} fill="url(#gradCollab)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -431,7 +436,7 @@ export default function OverviewView({
           <div style={{ height: '230px', width: '100%' }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={distributionData} margin={{ top: 8, right: 10, left: -24, bottom: 0 }}>
-                <CartesianGrid stroke="var(--chart-grid)" strokeDasharray="3 3" vertical={false} />
+                <CartesianGrid stroke="rgba(255, 255, 255, 0.07)" strokeDasharray="2 3" vertical={false} />
                 <XAxis dataKey="band" stroke="var(--text-muted)" fontSize={11} tickLine={false} />
                 <YAxis stroke="var(--text-muted)" fontSize={11} tickLine={false} />
                 <RechartsTooltip content={<CustomChartTooltip />} />
@@ -682,8 +687,8 @@ export default function OverviewView({
                       onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-surface-hover)'; }}
                       onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
                     >
-                      <td style={{ padding: '10px 18px', fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--text-primary)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <td style={{ padding: '10px 18px', fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}>
                           <span>{c.id}</span>
                           {c.id === 'CASE-10482' && (
                             <Badge variant="cyan" size="sm">Benchmark</Badge>
@@ -691,7 +696,7 @@ export default function OverviewView({
                         </div>
                       </td>
 
-                      <td style={{ padding: '10px 12px' }}>
+                      <td style={{ padding: '10px 12px', whiteSpace: 'nowrap' }}>
                         <Badge
                           variant={isCritical ? 'risk-critical' : isHigh ? 'risk-high' : isMed ? 'risk-medium' : 'risk-low'}
                           size="sm"
@@ -700,15 +705,15 @@ export default function OverviewView({
                         </Badge>
                       </td>
 
-                      <td style={{ padding: '10px 12px', fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--text-primary)' }}>
+                      <td style={{ padding: '10px 12px', fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
                         {c.confidence || c.score}%
                       </td>
 
-                      <td style={{ padding: '10px 12px', color: 'var(--text-secondary)' }}>
+                      <td style={{ padding: '10px 12px', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
                         <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>A • B • C</span>
                       </td>
 
-                      <td style={{ padding: '10px 12px' }}>
+                      <td style={{ padding: '10px 12px', whiteSpace: 'nowrap' }}>
                         <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
                           {c.status || 'NORMAL'}
                         </span>

@@ -306,20 +306,21 @@ export default function Navbar({
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '5px',
-              height: '30px',
-              padding: '0 10px',
+              gap: '6px',
+              height: '32px',
+              padding: '0 12px',
               borderRadius: 'var(--radius-sm)',
-              backgroundColor: 'var(--primary-subtle)',
+              backgroundColor: 'rgba(47, 107, 255, 0.12)',
               color: 'var(--primary-hover)',
-              border: '1px solid var(--primary-border)',
+              border: '1px solid rgba(47, 107, 255, 0.35)',
               fontSize: 'var(--text-xs)',
-              fontWeight: 600
+              fontWeight: 600,
+              cursor: 'pointer'
             }}
             title="Launch 3-minute hackathon pitch script"
           >
             <Play size={11} fill="currentColor" />
-            <span>Script</span>
+            <span>Pitch Script (3m)</span>
           </button>
         )}
 
@@ -621,14 +622,15 @@ export default function Navbar({
               width: '32px',
               height: '32px',
               borderRadius: 'var(--radius-full)',
-              backgroundColor: 'var(--primary-subtle)',
-              border: '1px solid var(--primary-border)',
+              backgroundColor: 'var(--bg-surface-raised)',
+              border: '1.5px solid var(--primary)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: 'var(--primary-hover)',
-              fontWeight: 600,
-              fontSize: 'var(--text-xs)'
+              color: 'var(--text-primary)',
+              fontWeight: 700,
+              fontSize: 'var(--text-xs)',
+              cursor: 'pointer'
             }}
             title={currentUser?.username || 'User Session'}
           >
