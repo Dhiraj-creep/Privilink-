@@ -209,11 +209,11 @@ Press `Ctrl+C` in the terminal to cleanly terminate all processes without orphan
 
 ### 6.2 Running Tests & Linter
 
-**1. Run the Python Automated Test Suite (24 Unit & Integration Tests):**
+**1. Run the Python Automated Test Suite (28 Unit & Integration Tests):**
 ```bash
 python -m pytest tests -v
 ```
-*Result: 24 passed in ~3.5 seconds.*
+*Result: 28 passed in ~10 seconds.*
 
 **2. Run Frontend Linter (Oxlint):**
 ```bash
@@ -245,12 +245,12 @@ python scripts/reset_demo.py
    - Switch to **Institution Network**. Point to Bank A, Insurer B, and Lender C.
    - Switch role to **Bank Admin**. Click on Insurer B or Lender C. Show the prominent **HTTP 403 Forbidden** banner: *"Zero raw customer records cross institutional firewalls."*
 3. **(0:50 - 1:20) The Weak Signal Blind Spot (Collaborative Risk Screen):**
-   - Click on **Case-10482**. In isolation, Bank A sees minor delay, Insurer B sees a standard claim, and Lender C sees a routine inquiry. None trigger alerts alone.
+   - Click on **Case-10482**. In isolation, Bank A sees minor delay, Insurer B sees a standard claim, and Lender C sees a routine inquiry. None trigger alerts alone (Baseline: MEDIUM / 42.0%).
 4. **(1:20 - 1:55) Run Synthesis (Simulation Lab Screen):**
    - Open **Simulation Lab**, click **Run Cross-Institution Anomaly**.
    - Watch the pipeline execute: Local Encoders $\rightarrow$ Diffie-Hellman PSI $\rightarrow$ SecAgg zero-sum masking $\rightarrow$ Model Inference.
 5. **(1:55 - 2:25) Collaborative Discovery & Explainability (Customer Investigation):**
-   - Click **Open Case-10482**. The case has escalated from LOW risk (0.22) to **HIGH RISK (0.88)**.
+   - Click **Open Case-10482**. The case has escalated from baseline MEDIUM (42.0%) to **HIGH RISK (98.4%)**.
    - Show the SHAP contribution breakdown: *"Independent weak signals aligned."*
    - Click **Trigger Step-Up Verification** to generate an internal review task.
 6. **(2:25 - 2:45) Byzantine Defense (Trust & Security):**
@@ -280,15 +280,16 @@ python scripts/reset_demo.py
    - Point out real calculated Gaussian standard deviation $\sigma$ and empirical PR-AUC curve loaded from backend training.
 5. **(Minute 5) End-to-End Anomaly Synthesis (Simulation Lab $\rightarrow$ Cases):**
    - Trigger the Cross-Institution Anomaly scenario.
-   - Show how `CASE-10482` transitions persistently in the coordinator database.
+   - Show how `CASE-10482` transitions persistently in the coordinator database (42.0% $\rightarrow$ 98.4%).
    - Resolve the step-up verification task with rationale and verify event logging.
-6. **(Minute 6) Tamper-Evident SHA-256 Audit Chain (Audit Trail):**
-   - Run **Verify Cryptographic Chain Integrity** $\rightarrow$ shows 100% valid SHA-256 signatures from genesis.
-   - Click **Simulate Tamper Attack** $\rightarrow$ modifies payload of historical Event #2.
-   - Re-run verification $\rightarrow$ shows immediate cryptographic failure at Block #2 with mismatched hash.
-   - Click **Restore Chain** to reset.
+6. **(Minute 6) Tamper-Evident SHA-256 Audit Chain & Sandbox Lab (Audit Trail):**
+   - In **Operational Ledger** view, run **Verify Cryptographic Chain Integrity** $\rightarrow$ shows 100% valid SHA-256 signatures from genesis.
+   - Switch toggle to **Tamper Sandbox Lab** $\rightarrow$ isolated evaluator playground that prevents corrupting live operations.
+   - Click **Simulate Tamper Attack** $\rightarrow$ injects unauthorized mutation into Sandbox Block #1.
+   - Re-run verification $\rightarrow$ shows immediate cryptographic chain failure at Block #1 with mismatched hash.
+   - Click **Reset Sandbox** to restore the sandbox back to verified state.
 7. **(Minute 7) Verification Suite & Production Roadmap:**
-   - Show terminal running `python -m pytest tests -v` (22/22 passing).
+   - Show terminal running `python -m pytest tests -v` (28/28 passing).
    - Discuss production considerations (Confidential Computing / SGX, Flower orchestration, OT-based PSI).
 
 ---
