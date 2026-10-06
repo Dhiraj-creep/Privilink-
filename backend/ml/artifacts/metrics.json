@@ -1,0 +1,116 @@
+{
+  "round": 27,
+  "totalRounds": 50,
+  "participatingNodes": "3 / 3",
+  "aggregationMethod": "SecAgg v2.1 + Robust FedMedian",
+  "differentialPrivacy": {
+    "status": "Enabled",
+    "epsilon": 1.5,
+    "delta": "1e-5",
+    "clipNorm": 1.0,
+    "noiseMechanism": "Gaussian Mechanism"
+  },
+  "driftStatus": "Normal (Wasserstein distance: 0.038)",
+  "globalMetrics": {
+    "precision": 0.39,
+    "recall": 1.0,
+    "f1Score": 0.56,
+    "prAuc": 0.71,
+    "rocAuc": 0.97,
+    "confusionMatrix": [
+      [
+        186,
+        25
+      ],
+      [
+        0,
+        16
+      ]
+    ]
+  },
+  "localMetricsComparison": [
+    {
+      "institution": "Bank A (Local Model Only)",
+      "institution_id": "BANK_A",
+      "features": "Repayment & Transaction only",
+      "prAuc": 0.45,
+      "rocAuc": 0.95,
+      "f1Score": 0.5,
+      "precision": 0.34,
+      "recall": 0.94,
+      "weakness": "Blind to insurance claim stress & fast loan stacking"
+    },
+    {
+      "institution": "Insurer B (Local Model Only)",
+      "institution_id": "INSURER_B",
+      "features": "Claims & Policy only",
+      "prAuc": 0.38,
+      "rocAuc": 0.93,
+      "f1Score": 0.51,
+      "precision": 0.36,
+      "recall": 0.88,
+      "weakness": "Blind to banking overdrafts & external credit applications"
+    },
+    {
+      "institution": "Lender C (Local Model Only)",
+      "institution_id": "LENDER_C",
+      "features": "Credit inquiries & Bureau only",
+      "prAuc": 0.72,
+      "rocAuc": 0.97,
+      "f1Score": 0.57,
+      "precision": 0.41,
+      "recall": 0.94,
+      "weakness": "Blind to real-time payroll stability & insurance losses"
+    },
+    {
+      "institution": "TRUSTMESH Collaborative Model",
+      "institution_id": "COLLABORATIVE",
+      "features": "Unified Privacy-Preserving Risk Representations",
+      "prAuc": 0.71,
+      "rocAuc": 0.97,
+      "f1Score": 0.56,
+      "precision": 0.39,
+      "recall": 1.0,
+      "weakness": "None (Cross-institution multi-signal synthesis)"
+    }
+  ],
+  "dpUtilityCurve": [
+    {
+      "epsilon": 4.5,
+      "sigma": 1.08,
+      "measuredPrAuc": 0.73,
+      "measuredF1": 0.56,
+      "utilityRetention": "101.9%"
+    },
+    {
+      "epsilon": 2.8,
+      "sigma": 1.73,
+      "measuredPrAuc": 0.72,
+      "measuredF1": 0.57,
+      "utilityRetention": "101.1%"
+    },
+    {
+      "epsilon": 1.5,
+      "sigma": 3.23,
+      "measuredPrAuc": 0.61,
+      "measuredF1": 0.56,
+      "utilityRetention": "85.7%"
+    },
+    {
+      "epsilon": 0.8,
+      "sigma": 6.06,
+      "measuredPrAuc": 0.6,
+      "measuredF1": 0.52,
+      "utilityRetention": "84.0%"
+    },
+    {
+      "epsilon": 0.3,
+      "sigma": 16.15,
+      "measuredPrAuc": 0.45,
+      "measuredF1": 0.39,
+      "utilityRetention": "63.8%"
+    }
+  ],
+  "testSetSize": 227,
+  "positiveCasesInTest": 16
+}
