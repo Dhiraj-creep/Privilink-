@@ -133,11 +133,11 @@ export default function OverviewView({
     { time: 'Sun', bankA: 35, insurerB: 17, lenderC: 53, collaborativeAlerts: 12 }
   ];
 
-  // Risk Score Distribution Histogram Data (5 Color-Coded Bands)
+  // Risk Score Distribution Histogram Data (5 Color-Coded Bands: Zero Blue)
   const distributionData = [
     { band: '0-20', label: 'Low', count: 642, color: '#10B981' },
-    { band: '20-40', label: 'Low-Med', count: 388, color: '#06B6D4' },
-    { band: '40-60', label: 'Medium', count: 184, color: '#3B82F6' },
+    { band: '20-40', label: 'Low-Med', count: 388, color: '#14B8A6' },
+    { band: '40-60', label: 'Medium', count: 184, color: '#64748B' },
     { band: '60-80', label: 'High', count: 52, color: '#F59E0B' },
     { band: '80-100', label: 'Critical', count: 18, color: '#EF4444' }
   ];
@@ -376,11 +376,11 @@ export default function OverviewView({
           action={
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
-                <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#3B82F6' }} />
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#10B981' }} />
                 Bank A
               </span>
               <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
-                <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#06B6D4' }} />
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#8B5CF6' }} />
                 Insurer B
               </span>
               <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
@@ -399,12 +399,12 @@ export default function OverviewView({
               <AreaChart data={alertsChartData} margin={{ top: 8, right: 10, left: -24, bottom: 0 }}>
                 <defs>
                   <linearGradient id="gradBank" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.28} />
-                    <stop offset="95%" stopColor="#3B82F6" stopOpacity={0.0} />
+                    <stop offset="5%" stopColor="#10B981" stopOpacity={0.28} />
+                    <stop offset="95%" stopColor="#10B981" stopOpacity={0.0} />
                   </linearGradient>
                   <linearGradient id="gradInsurer" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#06B6D4" stopOpacity={0.28} />
-                    <stop offset="95%" stopColor="#06B6D4" stopOpacity={0.0} />
+                    <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.28} />
+                    <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0.0} />
                   </linearGradient>
                   <linearGradient id="gradLender" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.28} />
@@ -419,8 +419,8 @@ export default function OverviewView({
                 <XAxis dataKey="time" stroke="var(--text-muted)" fontSize={11} tickLine={false} />
                 <YAxis stroke="var(--text-muted)" fontSize={11} tickLine={false} />
                 <RechartsTooltip content={<CustomChartTooltip />} />
-                <Area type="monotone" dataKey="bankA" name="Bank A" stroke="#3B82F6" strokeWidth={1.8} fill="url(#gradBank)" />
-                <Area type="monotone" dataKey="insurerB" name="Insurer B" stroke="#06B6D4" strokeWidth={1.8} fill="url(#gradInsurer)" />
+                <Area type="monotone" dataKey="bankA" name="Bank A" stroke="#10B981" strokeWidth={1.8} fill="url(#gradBank)" />
+                <Area type="monotone" dataKey="insurerB" name="Insurer B" stroke="#8B5CF6" strokeWidth={1.8} fill="url(#gradInsurer)" />
                 <Area type="monotone" dataKey="lenderC" name="Lender C" stroke="#F59E0B" strokeWidth={1.8} fill="url(#gradLender)" />
                 <Area type="monotone" dataKey="collaborativeAlerts" name="Joint Risk Flag" stroke="#EF4444" strokeWidth={2.4} fill="url(#gradCollab)" />
               </AreaChart>

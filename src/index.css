@@ -1,38 +1,38 @@
 @import './tokens.css';
 
 :root {
-  /* Legacy & Cross-View Compatibility Aliases mapped to Enterprise Dark Tokens */
-  --primary-dark: #0A1020;
-  --primary-accent: #2F6BFF;
-  --primary-accent-hover: #4D83FF;
-  --primary-accent-subtle: rgba(47, 107, 255, 0.14);
-  --primary-accent-border: rgba(47, 107, 255, 0.35);
+  /* Legacy & Cross-View Compatibility Aliases mapped to Obsidian & Emerald Tokens */
+  --primary-dark: #0B0D0E;
+  --primary-accent: #10B981;
+  --primary-accent-hover: #059669;
+  --primary-accent-subtle: rgba(16, 185, 129, 0.12);
+  --primary-accent-border: rgba(16, 185, 129, 0.32);
 
-  --nav-bg: #090D18;
-  --nav-surface: #0E1526;
-  --nav-border: #1E293B;
-  --nav-text: #94A3B8;
-  --nav-text-active: #F8FAFC;
-  --nav-accent: #2F6BFF;
+  --nav-bg: #08090A;
+  --nav-surface: #0E1012;
+  --nav-border: #1E2125;
+  --nav-text: #9CA3AF;
+  --nav-text-active: #F9FAFB;
+  --nav-accent: #10B981;
 
-  --secondary-green: #22C55E;
-  --muted-sage: #22D3EE;
-  --sage-light: rgba(34, 211, 238, 0.1);
-  --sage-border: rgba(34, 211, 238, 0.25);
+  --secondary-green: #10B981;
+  --muted-sage: #14B8A6;
+  --sage-light: rgba(20, 184, 166, 0.1);
+  --sage-border: rgba(20, 184, 166, 0.25);
 
-  --bg-subtle: #172033;
-  --bg-hover: #1C2740;
+  --bg-subtle: #181B1F;
+  --bg-hover: #1F2228;
 
-  --border-light: #1E293B;
-  --border-medium: #243049;
-  --border-dark: #334155;
+  --border-light: #1E2125;
+  --border-medium: #282C33;
+  --border-dark: #323740;
 
-  --text-light: #F8FAFC;
+  --text-light: #F9FAFB;
 
-  --info: #0284C7;
-  --info-light: rgba(2, 132, 199, 0.12);
-  --info-text: #38BDF8;
-  --info-border: rgba(2, 132, 199, 0.3);
+  --info: #14B8A6;
+  --info-light: rgba(20, 184, 166, 0.12);
+  --info-text: #2DD4BF;
+  --info-border: rgba(20, 184, 166, 0.3);
 
   --success-light: rgba(34, 197, 94, 0.12);
   --success-text: #4ADE80;

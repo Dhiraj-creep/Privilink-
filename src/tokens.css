@@ -17,40 +17,40 @@
   --text-xl: 24px;
   --text-2xl: 32px;
 
-  /* Color Foundations */
-  --bg-app: #0A1020;             /* Navy Background */
-  --bg-surface: #111827;         /* Graphite Surface */
-  --bg-surface-raised: #172033;  /* Raised Surface (Cards, Dropdowns) */
-  --bg-surface-hover: #1C2740;   /* Interactive Hover */
-  --bg-surface-active: #223050;  /* Active Selection */
+  /* Color Foundations: Neutral Obsidian Carbon (Zero Blue Undertones) */
+  --bg-app: #0B0D0E;             /* Deep Obsidian Carbon */
+  --bg-surface: #131518;         /* Neutral Charcoal Surface */
+  --bg-surface-raised: #181B1F;  /* Raised Surface (Cards, Dropdowns) */
+  --bg-surface-hover: #1F2228;   /* Interactive Hover */
+  --bg-surface-active: #262A30;  /* Active Selection */
 
   /* Hairline Borders */
-  --border-subtle: #1E293B;
-  --border-default: #243049;     /* 1px Hairline Default */
-  --border-focus: #2F6BFF;
-  --border-muted: #1A2438;
+  --border-subtle: #1E2125;
+  --border-default: #282C33;     /* 1px Hairline Default */
+  --border-focus: #10B981;
+  --border-muted: #1A1D21;
 
   /* Text Colors */
-  --text-primary: #E6ECF7;       /* High Contrast White-Blue */
-  --text-secondary: #9AA8C2;     /* Balanced Secondary */
-  --text-muted: #66748F;         /* De-emphasized Metadata */
-  --text-inverse: #0A1020;
+  --text-primary: #F3F4F6;       /* Crisp High Contrast Neutral White */
+  --text-secondary: #9CA3AF;     /* Balanced Neutral Slate */
+  --text-muted: #6B7280;         /* De-emphasized Metadata */
+  --text-inverse: #0B0D0E;
 
-  /* Brand & Primary */
-  --primary: #2F6BFF;            /* Electric Blue */
-  --primary-hover: #4D83FF;
-  --primary-subtle: rgba(47, 107, 255, 0.14);
-  --primary-border: rgba(47, 107, 255, 0.35);
+  /* Brand & Primary: Authentic Emerald Privacy & Security Accent */
+  --primary: #10B981;            /* Emerald */
+  --primary-hover: #059669;
+  --primary-subtle: rgba(16, 185, 129, 0.12);
+  --primary-border: rgba(16, 185, 129, 0.32);
 
-  /* Secondary Accent (Data / Cryptographic Verified) */
-  --accent-cyan: #22D3EE;
-  --accent-cyan-subtle: rgba(34, 211, 238, 0.12);
-  --accent-cyan-border: rgba(34, 211, 238, 0.3);
+  /* Secondary Accent (Data / Cryptographic Verified: Sage / Teal) */
+  --accent-cyan: #14B8A6;
+  --accent-cyan-subtle: rgba(20, 184, 166, 0.12);
+  --accent-cyan-border: rgba(20, 184, 166, 0.3);
 
   /* Semantic Statuses */
-  --success: #22C55E;
-  --success-subtle: rgba(34, 197, 94, 0.12);
-  --success-border: rgba(34, 197, 94, 0.3);
+  --success: #10B981;
+  --success-subtle: rgba(16, 185, 129, 0.12);
+  --success-border: rgba(16, 185, 129, 0.3);
 
   --warning: #F59E0B;
   --warning-subtle: rgba(245, 158, 11, 0.12);
@@ -61,18 +61,18 @@
   --danger-border: rgba(239, 68, 68, 0.3);
 
   /* Risk Scale (Strict Color Guidance) */
-  --risk-low: #22C55E;
+  --risk-low: #10B981;
   --risk-medium: #F59E0B;
   --risk-high: #F97316;
   --risk-critical: #EF4444;
 
-  /* Colorblind-Safe Chart Palette */
-  --chart-1: #3B82F6;            /* Blue */
-  --chart-2: #22D3EE;            /* Cyan */
-  --chart-3: #FBBF24;            /* Amber */
-  --chart-4: #FB7185;            /* Rose */
-  --chart-5: #A78BFA;            /* Violet (sparingly) */
-  --chart-grid: #1A253A;         /* Hairline Chart Grids */
+  /* Colorblind-Safe Chart Palette (Non-blue foundations) */
+  --chart-1: #14B8A6;            /* Teal / Sage */
+  --chart-2: #8B5CF6;            /* Violet / Slate */
+  --chart-3: #F59E0B;            /* Amber */
+  --chart-4: #EF4444;            /* Crimson */
+  --chart-5: #64748B;            /* Neutral Slate */
+  --chart-grid: #20242B;         /* Hairline Chart Grids */
 
   /* 8px Spacing Grid */
   --space-0-5: 4px;

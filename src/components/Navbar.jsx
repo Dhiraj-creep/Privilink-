@@ -310,9 +310,9 @@ export default function Navbar({
               height: '32px',
               padding: '0 12px',
               borderRadius: 'var(--radius-sm)',
-              backgroundColor: 'rgba(47, 107, 255, 0.12)',
-              color: 'var(--primary-hover)',
-              border: '1px solid rgba(47, 107, 255, 0.35)',
+              backgroundColor: 'var(--primary-subtle)',
+              color: 'var(--primary)',
+              border: '1px solid var(--primary-border)',
               fontSize: 'var(--text-xs)',
               fontWeight: 600,
               cursor: 'pointer'
