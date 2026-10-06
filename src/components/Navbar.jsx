@@ -1,37 +1,54 @@
-import React, { useState } from 'react';
-import { 
-  ShieldCheck, 
-  Bell, 
-  Play, 
+import {
+  Bell,
+  Play,
   ChevronDown,
   Lock,
   LogOut,
-  Check
+  Search,
+  Check,
+  Building,
+  KeyRound
 } from 'lucide-react';
+import { Badge } from './ui/Badge';
 
-export default function Navbar({ 
-  currentRole, 
+export default function Navbar({
+  currentRole,
   currentUser,
+  currentTab = 'overview',
   onPersonaLogin,
   onLogout,
-  onStartDemoTour, 
-  alertCount, 
-  notifications,
+  onStartDemoTour,
+  alertCount = 0,
+  notifications = [],
   backendConnected = false,
-  appMode = 'app',
-  onToggleAppMode
+  searchTerm = '',
+  onSearchChange
 }) {
   const [showRoleMenu, setShowRoleMenu] = useState(false);
   const [showNotificationMenu, setShowNotificationMenu] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [authError, setAuthError] = useState(null);
+
+  // Keyboard shortcut Ctrl+K focus on search
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        const searchInput = document.getElementById('tm-global-search');
+        if (searchInput) searchInput.focus();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const demoPersonas = [
     {
       id: 'RISK_ANALYST',
       username: 'analyst',
       title: 'Risk Analyst',
-      subtitle: 'Cross-institution case investigations & collaborative explainability',
+      subtitle: 'Cross-institution case investigations & collaborative explainability HUD',
       scope: 'Global Read / Step-Up KYC Dispatch',
       badge: 'Analyst Clearance'
     },
@@ -41,8 +58,8 @@ export default function Navbar({
       username: 'bank_admin',
       institutionId: 'BANK_A',
       title: 'Institution Admin (Bank A)',
-      subtitle: 'Sovereign Bank A repository only (Blocked from B & C)',
-      scope: 'Sovereign Bank A Only (403 on Insurer & Lender)',
+      subtitle: 'Sovereign Bank A customer repository only (HTTP 403 on Insurer & Lender)',
+      scope: 'Sovereign Bank A Only',
       badge: 'Bank A Sovereign'
     },
     {
@@ -51,8 +68,8 @@ export default function Navbar({
       username: 'insurer_admin',
       institutionId: 'INSURER_B',
       title: 'Institution Admin (Insurer B)',
-      subtitle: 'Sovereign Insurer B repository only (Blocked from A & C)',
-      scope: 'Sovereign Insurer B Only (403 on Bank & Lender)',
+      subtitle: 'Sovereign Insurer B policy repository only (HTTP 403 on Bank & Lender)',
+      scope: 'Sovereign Insurer B Only',
       badge: 'Insurer B Sovereign'
     },
     {
@@ -61,8 +78,8 @@ export default function Navbar({
       username: 'lender_admin',
       institutionId: 'LENDER_C',
       title: 'Institution Admin (Lender C)',
-      subtitle: 'Sovereign Lender C repository only (Blocked from A & B)',
-      scope: 'Sovereign Lender C Only (403 on Bank & Insurer)',
+      subtitle: 'Sovereign Lender C credit repository only (HTTP 403 on Bank & Insurer)',
+      scope: 'Sovereign Lender C Only',
       badge: 'Lender C Sovereign'
     },
     {
@@ -70,23 +87,23 @@ export default function Navbar({
       role: 'COMPLIANCE_OFFICER',
       username: 'compliance',
       title: 'Compliance Officer',
-      subtitle: 'Cryptographic audit verification & step-up task resolution',
-      scope: 'Full Compliance Clearance & Case Resolution',
-      badge: 'Audit & Compliance'
+      subtitle: 'Cryptographic audit verification, privacy budgets & case resolution clearance',
+      scope: 'Full Compliance & Case Clearance',
+      badge: 'Compliance Officer'
     },
     {
       id: 'NETWORK_ADMIN',
       role: 'NETWORK_ADMIN',
       username: 'admin',
       title: 'Network Admin',
-      subtitle: 'Topology orchestration, Byzantine defense & model coordination',
-      scope: 'Full Administrative Clearance & Quarantine Control',
+      subtitle: 'Global topology, Byzantine defense, SecAgg orchestrations & participant quarantine',
+      scope: 'Full Administrative Clearance',
       badge: 'Network Root'
     }
   ];
 
-  const activePersona = demoPersonas.find(p => 
-    p.username === currentUser?.username || 
+  const activePersona = demoPersonas.find(p =>
+    p.username === currentUser?.username ||
     (p.role === currentRole && (!p.institutionId || p.institutionId === currentUser?.institution_id))
   ) || demoPersonas[0];
 
@@ -105,279 +122,350 @@ export default function Navbar({
     }
   };
 
+  const getTabBreadcrumb = () => {
+    switch (currentTab) {
+      case 'overview':
+        return 'Overview Dashboard';
+      case 'collaborative_risk':
+        return 'Collaborative Risk Cases';
+      case 'customer_investigation':
+        return 'Case Investigation';
+      case 'institutions':
+        return 'Institution Network';
+      case 'model_collaboration':
+        return 'Model Collaboration';
+      case 'privacy_center':
+        return 'Differential Privacy';
+      case 'audit_trail':
+        return 'Cryptographic Audit';
+      case 'simulation_lab':
+        return 'Simulation Lab';
+      case 'secure_aggregation':
+        return 'Secure Aggregation Lab';
+      case 'entity_resolution':
+        return 'Private Entity PSI';
+      case 'trust_security':
+        return 'Trust & Security';
+      case 'architecture_scope':
+        return 'Architecture & Scope';
+      default:
+        return 'Dashboard';
+    }
+  };
+
   return (
-    <header style={{
-      height: '64px',
-      backgroundColor: '#090D16',
-      borderBottom: '1px solid #1E293B',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      padding: '0 24px',
-      position: 'sticky',
-      top: 0,
-      zIndex: 40,
-      boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.25)'
-    }}>
-      {/* Brand & Federation Overview */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }} onClick={() => onToggleAppMode && onToggleAppMode('app')}>
-          <div style={{
-            width: '34px',
-            height: '34px',
-            borderRadius: '6px',
-            backgroundColor: '#0284C7',
-            color: '#FFFFFF',
+    <header
+      className="tm-topbar"
+      style={{
+        height: '56px',
+        backgroundColor: 'var(--bg-surface)',
+        borderBottom: '1px solid var(--border-default)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '0 20px',
+        position: 'sticky',
+        top: 0,
+        zIndex: 40,
+        gap: '16px'
+      }}
+    >
+      {/* Left: Breadcrumbs & Node Label */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '14px', minWidth: 0 }}>
+        {/* Breadcrumb Hierarchy */}
+        <div
+          style={{
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 0 12px rgba(2, 132, 199, 0.35)'
-          }}>
-            <ShieldCheck size={20} strokeWidth={2.2} />
-          </div>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ 
-                fontWeight: 700, 
-                fontSize: '1.05rem', 
-                letterSpacing: '-0.02em', 
-                color: '#F8FAFC' 
-              }}>
-                TRUSTMESH
-              </span>
-              <span style={{
-                fontSize: '0.625rem',
-                fontWeight: 600,
-                padding: '2px 6px',
-                borderRadius: '4px',
-                backgroundColor: 'rgba(56, 189, 248, 0.12)',
-                color: '#38BDF8',
-                border: '1px solid rgba(56, 189, 248, 0.3)',
-                letterSpacing: '0.04em',
-                textTransform: 'uppercase'
-              }}>
-                Enterprise VFL
-              </span>
-            </div>
-            <p style={{ 
-              fontSize: '0.7rem', 
-              color: '#94A3B8', 
-              letterSpacing: '0.01em',
-              lineHeight: 1
-            }}>
-              Share intelligence. Not customer data.
-            </p>
-          </div>
+            gap: '8px',
+            fontSize: 'var(--text-sm)',
+            whiteSpace: 'nowrap'
+          }}
+        >
+          <span style={{ color: 'var(--text-muted)' }}>TrustMesh</span>
+          <span style={{ color: 'var(--border-default)' }}>/</span>
+          <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{getTabBreadcrumb()}</span>
         </div>
 
-        {/* Live Network Status Pill */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          padding: '4px 10px',
-          backgroundColor: '#111827',
-          borderRadius: '5px',
-          border: '1px solid #1E293B',
-          fontSize: '0.75rem'
-        }}>
-          <span style={{
-            width: '7px',
-            height: '7px',
-            borderRadius: '50%',
-            backgroundColor: backendConnected ? '#10B981' : '#F59E0B',
-            boxShadow: backendConnected ? '0 0 8px rgba(16, 185, 129, 0.6)' : 'none',
-            display: 'inline-block'
-          }} />
-          <span style={{ color: '#F8FAFC', fontWeight: 500 }}>
-            {backendConnected ? 'Coordinator API Online' : 'Local Demo Runtime'}
-          </span>
-          <span style={{ color: '#475569' }}>•</span>
-          <span style={{ color: '#94A3B8', fontFamily: 'var(--font-mono)', fontSize: '0.7rem' }}>
-            Round #27
+        {/* Institution / Node Label */}
+        <div
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '2px 8px',
+            borderRadius: 'var(--radius-xs)',
+            backgroundColor: 'var(--bg-surface-raised)',
+            border: '1px solid var(--border-default)',
+            fontSize: 'var(--text-xs)',
+            color: 'var(--text-secondary)'
+          }}
+        >
+          <Building size={11} color="var(--primary-hover)" />
+          <span style={{ fontWeight: 500 }}>
+            {currentUser?.institution_id
+              ? `${currentUser.institution_id} Node`
+              : backendConnected
+              ? 'Coordinator Node (Port 8000)'
+              : 'Coordinator Node (Local Runtime)'}
           </span>
         </div>
       </div>
 
-      {/* Action Controls & Navigation */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-        {/* View Mode Switcher (Console vs Product Landing) */}
-        {onToggleAppMode && (
-          <div style={{
-            display: 'flex',
-            backgroundColor: '#111827',
-            borderRadius: '6px',
-            border: '1px solid #1E293B',
-            padding: '2px'
-          }}>
-            <button
-              onClick={() => onToggleAppMode('app')}
-              style={{
-                padding: '4px 10px',
-                fontSize: '0.725rem',
-                fontWeight: 600,
-                borderRadius: '4px',
-                color: appMode === 'app' ? '#FFFFFF' : '#94A3B8',
-                backgroundColor: appMode === 'app' ? '#0284C7' : 'transparent',
-                transition: 'all 0.15s ease'
-              }}
-            >
-              Console
-            </button>
-            <button
-              onClick={() => onToggleAppMode('landing')}
-              style={{
-                padding: '4px 10px',
-                fontSize: '0.725rem',
-                fontWeight: 600,
-                borderRadius: '4px',
-                color: appMode === 'landing' ? '#FFFFFF' : '#94A3B8',
-                backgroundColor: appMode === 'landing' ? '#0284C7' : 'transparent',
-                transition: 'all 0.15s ease'
-              }}
-            >
-              Overview
-            </button>
-          </div>
-        )}
-
-        {/* Guided 3-Minute Demo Script Button */}
-        <button
-          onClick={onStartDemoTour}
-          style={{ 
+      {/* Center: Global Search with Ctrl+K */}
+      <div style={{ flex: 1, maxWidth: '380px', position: 'relative' }}>
+        <Search
+          size={14}
+          style={{
+            position: 'absolute',
+            left: '10px',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            color: 'var(--text-muted)',
+            pointerEvents: 'none'
+          }}
+        />
+        <input
+          id="tm-global-search"
+          type="text"
+          placeholder="Search entities, cases, hashes..."
+          value={searchTerm}
+          onChange={(e) => onSearchChange && onSearchChange(e.target.value)}
+          style={{
+            width: '100%',
+            height: '32px',
+            paddingLeft: '32px',
+            paddingRight: '60px',
+            fontSize: 'var(--text-sm)',
+            backgroundColor: 'var(--bg-app)',
+            border: '1px solid var(--border-default)',
+            borderRadius: 'var(--radius-sm)',
+            color: 'var(--text-primary)'
+          }}
+        />
+        <div
+          style={{
+            position: 'absolute',
+            right: '8px',
+            top: '50%',
+            transform: 'translateY(-50%)',
             display: 'flex',
             alignItems: 'center',
-            gap: '6px',
-            padding: '6px 12px',
-            fontSize: '0.75rem',
-            fontWeight: 600,
-            borderRadius: '5px',
-            backgroundColor: 'rgba(2, 132, 199, 0.12)',
-            color: '#38BDF8',
-            border: '1px solid rgba(2, 132, 199, 0.3)',
-            transition: 'all 0.15s ease'
+            gap: '2px',
+            padding: '1px 5px',
+            borderRadius: 'var(--radius-xs)',
+            backgroundColor: 'var(--bg-surface-raised)',
+            border: '1px solid var(--border-default)',
+            fontSize: '10px',
+            fontFamily: 'var(--font-mono)',
+            color: 'var(--text-muted)',
+            pointerEvents: 'none'
           }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = 'rgba(2, 132, 199, 0.22)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'rgba(2, 132, 199, 0.12)';
-          }}
-          title="3-minute guided walkthrough for evaluation"
         >
-          <Play size={12} fill="#38BDF8" stroke="#38BDF8" />
-          <span>Demo Script</span>
-        </button>
+          <span>Ctrl</span>
+          <span>K</span>
+        </div>
+      </div>
 
-        {/* Role & Persona Authenticator Dropdown */}
+      {/* Right Controls: Privacy Posture Pill + Role Switcher + Tour + Alerts + User */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+        {/* Persistent Privacy Posture Pill */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '7px',
+            padding: '4px 10px',
+            backgroundColor: 'rgba(34, 197, 94, 0.08)',
+            border: '1px solid rgba(34, 197, 94, 0.25)',
+            borderRadius: 'var(--radius-full)',
+            fontSize: 'var(--text-xs)',
+            fontWeight: 500,
+            color: 'var(--text-primary)'
+          }}
+        >
+          <Lock size={12} color="var(--success)" />
+          <span>Raw data never leaves this node</span>
+          <span
+            style={{
+              width: '6px',
+              height: '6px',
+              borderRadius: '50%',
+              backgroundColor: 'var(--success)',
+              boxShadow: '0 0 6px var(--success)',
+              display: 'inline-block'
+            }}
+          />
+        </div>
+
+        {/* 3-Min Script Button */}
+        {onStartDemoTour && (
+          <button
+            onClick={onStartDemoTour}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '5px',
+              height: '30px',
+              padding: '0 10px',
+              borderRadius: 'var(--radius-sm)',
+              backgroundColor: 'var(--primary-subtle)',
+              color: 'var(--primary-hover)',
+              border: '1px solid var(--primary-border)',
+              fontSize: 'var(--text-xs)',
+              fontWeight: 600
+            }}
+            title="Launch 3-minute hackathon pitch script"
+          >
+            <Play size={11} fill="currentColor" />
+            <span>Script</span>
+          </button>
+        )}
+
+        {/* Role Switcher Dropdown */}
         <div style={{ position: 'relative' }}>
-          <button 
-            onClick={() => setShowRoleMenu(!showRoleMenu)}
-            style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '7px',
-              padding: '6px 11px',
-              backgroundColor: '#111827',
-              border: '1px solid #1E293B',
-              borderRadius: '5px',
-              color: '#F8FAFC',
-              fontSize: '0.75rem'
+          <button
+            onClick={() => {
+              setShowRoleMenu(!showRoleMenu);
+              setShowNotificationMenu(false);
+              setShowUserMenu(false);
+            }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              height: '32px',
+              padding: '0 10px',
+              backgroundColor: 'var(--bg-surface-raised)',
+              border: '1px solid var(--border-default)',
+              borderRadius: 'var(--radius-sm)',
+              color: 'var(--text-primary)',
+              fontSize: 'var(--text-xs)'
             }}
           >
-            <Lock size={12} color="#38BDF8" />
-            <span style={{ color: '#94A3B8' }}>Role:</span>
-            <span style={{ fontWeight: 600 }}>{activePersona.title}</span>
-            <span style={{ 
-              width: '6px', 
-              height: '6px', 
-              borderRadius: '50%', 
-              backgroundColor: currentUser ? '#10B981' : '#F59E0B', 
-              display: 'inline-block'
-            }} />
-            <ChevronDown size={12} color="#94A3B8" />
+            <KeyRound size={12} color="var(--primary-hover)" />
+            <span style={{ color: 'var(--text-muted)' }}>Role:</span>
+            <Badge variant="primary" size="sm">
+              {activePersona.title}
+            </Badge>
+            <ChevronDown size={12} color="var(--text-muted)" />
           </button>
 
           {showRoleMenu && (
-            <div style={{
-              position: 'absolute',
-              right: 0,
-              top: '115%',
-              width: '350px',
-              backgroundColor: '#0F172A',
-              border: '1px solid #334155',
-              borderRadius: '8px',
-              boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)',
-              zIndex: 50,
-              padding: '12px'
-            }}>
-              <div style={{ paddingBottom: '8px', borderBottom: '1px solid #1E293B', marginBottom: '8px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.675rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#94A3B8' }}>
-                    Authenticated Persona (RBAC)
-                  </span>
-                  <span style={{
-                    fontSize: '0.6rem',
-                    fontWeight: 600,
-                    padding: '2px 6px',
-                    borderRadius: '3px',
-                    backgroundColor: 'rgba(16, 185, 129, 0.15)',
-                    color: '#10B981',
-                    border: '1px solid rgba(16, 185, 129, 0.3)'
-                  }}>
-                    HMAC-SHA256 Token
-                  </span>
+            <div
+              style={{
+                position: 'absolute',
+                right: 0,
+                top: 'calc(100% + 6px)',
+                width: '360px',
+                backgroundColor: 'var(--bg-surface-raised)',
+                border: '1px solid var(--border-default)',
+                borderRadius: 'var(--radius-md)',
+                boxShadow: 'var(--shadow-lg)',
+                zIndex: 60,
+                padding: '12px',
+                animation: 'fadeIn var(--transition-fast)'
+              }}
+            >
+              <div
+                style={{
+                  paddingBottom: '8px',
+                  borderBottom: '1px solid var(--border-default)',
+                  marginBottom: '8px',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}
+              >
+                <div>
+                  <div
+                    style={{
+                      fontSize: 'var(--text-xs)',
+                      fontWeight: 700,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                      color: 'var(--text-muted)'
+                    }}
+                  >
+                    Role-Based Access Control (RBAC)
+                  </div>
+                  <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                    Active Identity: <strong style={{ color: 'var(--text-primary)' }}>{currentUser?.username || activePersona.username}</strong>
+                  </div>
                 </div>
-                <div style={{ fontSize: '0.725rem', color: '#CBD5E1', marginTop: '4px' }}>
-                  Active user: <strong style={{ color: '#F8FAFC' }}>{currentUser?.username || activePersona.username}</strong>
-                </div>
+                <Badge variant="success" size="sm">
+                  HMAC Session
+                </Badge>
               </div>
 
               {authError && (
-                <div style={{ padding: '6px 8px', backgroundColor: 'rgba(220, 38, 38, 0.15)', color: '#FCA5A5', border: '1px solid rgba(220, 38, 38, 0.3)', borderRadius: '4px', fontSize: '0.72rem', marginBottom: '8px' }}>
+                <div
+                  style={{
+                    padding: '6px 8px',
+                    backgroundColor: 'var(--danger-subtle)',
+                    color: 'var(--danger)',
+                    border: '1px solid var(--danger-border)',
+                    borderRadius: 'var(--radius-xs)',
+                    fontSize: 'var(--text-xs)',
+                    marginBottom: '8px'
+                  }}
+                >
                   {authError}
                 </div>
               )}
 
-              <div style={{ maxHeight: '290px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                {demoPersonas.map(p => {
-                  const isCurrent = (currentUser?.username === p.username) || (activePersona.username === p.username);
+              <div style={{ maxHeight: '280px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                {demoPersonas.map((p) => {
+                  const isCurrent =
+                    currentUser?.username === p.username || activePersona.username === p.username;
                   return (
-                    <div 
+                    <div
                       key={p.username}
                       onClick={() => !isAuthenticating && handleSwitchToPersona(p)}
                       style={{
                         padding: '8px 10px',
-                        borderRadius: '5px',
+                        borderRadius: 'var(--radius-sm)',
                         cursor: isAuthenticating ? 'wait' : 'pointer',
-                        backgroundColor: isCurrent ? 'rgba(2, 132, 199, 0.15)' : '#111827',
-                        border: isCurrent ? '1px solid #0284C7' : '1px solid #1E293B',
-                        transition: 'all 0.15s ease'
+                        backgroundColor: isCurrent ? 'var(--primary-subtle)' : 'transparent',
+                        border: isCurrent ? '1px solid var(--primary)' : '1px solid transparent',
+                        transition: 'all var(--transition-fast)'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!isCurrent) {
+                          e.currentTarget.style.backgroundColor = 'var(--bg-surface-hover)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isCurrent) {
+                          e.currentTarget.style.backgroundColor = 'transparent';
+                        }
                       }}
                     >
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ 
-                          fontWeight: 600, 
-                          fontSize: '0.775rem', 
-                          color: isCurrent ? '#38BDF8' : '#F8FAFC' 
-                        }}>
+                        <span
+                          style={{
+                            fontWeight: 600,
+                            fontSize: 'var(--text-sm)',
+                            color: isCurrent ? 'var(--primary-hover)' : 'var(--text-primary)'
+                          }}
+                        >
                           {p.title}
                         </span>
                         {isCurrent ? (
-                          <span style={{ fontSize: '0.625rem', color: '#10B981', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                            <Check size={10} /> Active
+                          <span style={{ fontSize: 'var(--text-xs)', color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '2px' }}>
+                            <Check size={11} strokeWidth={2.4} /> Active
                           </span>
                         ) : (
-                          <span style={{ fontSize: '0.625rem', color: '#64748B', fontFamily: 'var(--font-mono)' }}>
+                          <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
                             {p.username}
                           </span>
                         )}
                       </div>
-                      <p style={{ fontSize: '0.675rem', color: '#94A3B8', margin: '2px 0 3px', lineHeight: 1.3 }}>
+                      <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: '2px 0', lineHeight: 1.3 }}>
                         {p.subtitle}
                       </p>
-                      <div style={{ fontSize: '0.625rem', color: '#64748B', fontFamily: 'var(--font-mono)' }}>
-                        {p.scope}
+                      <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                        Scope: {p.scope}
                       </div>
                     </div>
                   );
@@ -385,16 +473,24 @@ export default function Navbar({
               </div>
 
               {currentUser && onLogout && (
-                <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #1E293B', display: 'flex', justifyContent: 'flex-end' }}>
+                <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid var(--border-default)', display: 'flex', justifyContent: 'flex-end' }}>
                   <button
                     onClick={() => {
                       onLogout();
                       setShowRoleMenu(false);
                     }}
-                    style={{ fontSize: '0.7rem', padding: '4px 8px', color: '#F87171', display: 'flex', alignItems: 'center', gap: '4px' }}
+                    style={{
+                      fontSize: 'var(--text-xs)',
+                      padding: '4px 8px',
+                      color: 'var(--danger)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      borderRadius: 'var(--radius-xs)'
+                    }}
                   >
-                    <LogOut size={11} />
-                    Sign Out
+                    <LogOut size={12} />
+                    Sign Out Session
                   </button>
                 </div>
               )}
@@ -402,81 +498,210 @@ export default function Navbar({
           )}
         </div>
 
-        {/* Notifications Alert Bell */}
+        {/* Notifications Bell */}
         <div style={{ position: 'relative' }}>
-          <button 
-            onClick={() => setShowNotificationMenu(!showNotificationMenu)}
+          <button
+            onClick={() => {
+              setShowNotificationMenu(!showNotificationMenu);
+              setShowRoleMenu(false);
+              setShowUserMenu(false);
+            }}
             style={{
               position: 'relative',
-              width: '34px',
-              height: '34px',
-              borderRadius: '5px',
-              border: '1px solid #1E293B',
+              width: '32px',
+              height: '32px',
+              borderRadius: 'var(--radius-sm)',
+              border: '1px solid var(--border-default)',
+              backgroundColor: showNotificationMenu ? 'var(--bg-surface-hover)' : 'var(--bg-surface-raised)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#F8FAFC',
-              backgroundColor: showNotificationMenu ? '#1E293B' : '#111827'
+              color: 'var(--text-primary)'
             }}
+            title="Network Alerts"
           >
             <Bell size={15} />
             {alertCount > 0 && (
-              <span style={{
-                position: 'absolute',
-                top: '-3px',
-                right: '-3px',
-                backgroundColor: '#DC2626',
-                color: '#fff',
-                borderRadius: '50%',
-                fontSize: '0.6rem',
-                fontWeight: 700,
-                width: '15px',
-                height: '15px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
+              <span
+                style={{
+                  position: 'absolute',
+                  top: '-3px',
+                  right: '-3px',
+                  backgroundColor: 'var(--danger)',
+                  color: '#FFFFFF',
+                  borderRadius: 'var(--radius-full)',
+                  fontSize: '9px',
+                  fontWeight: 700,
+                  width: '14px',
+                  height: '14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
                 {alertCount}
               </span>
             )}
           </button>
 
           {showNotificationMenu && (
-            <div style={{
-              position: 'absolute',
-              right: 0,
-              top: '115%',
-              width: '320px',
-              backgroundColor: '#0F172A',
-              border: '1px solid #334155',
-              borderRadius: '8px',
-              boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)',
-              zIndex: 50,
-              padding: '12px'
-            }}>
+            <div
+              style={{
+                position: 'absolute',
+                right: 0,
+                top: 'calc(100% + 6px)',
+                width: '320px',
+                backgroundColor: 'var(--bg-surface-raised)',
+                border: '1px solid var(--border-default)',
+                borderRadius: 'var(--radius-md)',
+                boxShadow: 'var(--shadow-lg)',
+                zIndex: 60,
+                padding: '12px',
+                animation: 'fadeIn var(--transition-fast)'
+              }}
+            >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                <span style={{ fontWeight: 600, fontSize: '0.8rem', color: '#F8FAFC' }}>Network Alert Stream</span>
-                <span style={{ fontSize: '0.625rem', color: '#38BDF8', backgroundColor: 'rgba(56, 189, 248, 0.1)', padding: '1px 5px', borderRadius: '3px' }}>Live</span>
+                <span style={{ fontWeight: 600, fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>
+                  Network Alerts
+                </span>
+                <Badge variant="cyan" size="sm">
+                  Live Stream
+                </Badge>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '280px', overflowY: 'auto' }}>
-                {notifications.map(n => (
-                  <div key={n.id} style={{
-                    padding: '8px 10px',
-                    borderRadius: '5px',
-                    backgroundColor: n.type === 'danger' ? 'rgba(220, 38, 38, 0.1)' : n.type === 'warning' ? 'rgba(217, 119, 6, 0.1)' : '#111827',
-                    border: '1px solid #1E293B',
-                    fontSize: '0.725rem'
-                  }}>
+                {notifications.map((n) => (
+                  <div
+                    key={n.id}
+                    style={{
+                      padding: '8px 10px',
+                      borderRadius: 'var(--radius-sm)',
+                      backgroundColor:
+                        n.type === 'danger'
+                          ? 'var(--danger-subtle)'
+                          : n.type === 'warning'
+                          ? 'var(--warning-subtle)'
+                          : 'var(--bg-surface)',
+                      border: '1px solid var(--border-default)',
+                      fontSize: 'var(--text-xs)'
+                    }}
+                  >
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 600, marginBottom: '2px' }}>
-                      <span style={{ color: n.type === 'danger' ? '#FCA5A5' : n.type === 'warning' ? '#FCD34D' : '#F8FAFC' }}>
+                      <span
+                        style={{
+                          color:
+                            n.type === 'danger'
+                              ? 'var(--danger)'
+                              : n.type === 'warning'
+                              ? 'var(--warning)'
+                              : 'var(--text-primary)'
+                        }}
+                      >
                         {n.title}
                       </span>
-                      <span style={{ color: '#64748B', fontSize: '0.65rem' }}>{n.time}</span>
+                      <span style={{ color: 'var(--text-muted)', fontSize: '10px' }}>{n.time}</span>
                     </div>
-                    <p style={{ color: '#94A3B8', lineHeight: 1.35 }}>{n.detail}</p>
+                    <p style={{ color: 'var(--text-secondary)', lineHeight: 1.35, margin: 0 }}>{n.detail}</p>
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+        </div>
+
+        {/* User Avatar Menu */}
+        <div style={{ position: 'relative' }}>
+          <button
+            onClick={() => {
+              setShowUserMenu(!showUserMenu);
+              setShowRoleMenu(false);
+              setShowNotificationMenu(false);
+            }}
+            style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: 'var(--radius-full)',
+              backgroundColor: 'var(--primary-subtle)',
+              border: '1px solid var(--primary-border)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'var(--primary-hover)',
+              fontWeight: 600,
+              fontSize: 'var(--text-xs)'
+            }}
+            title={currentUser?.username || 'User Session'}
+          >
+            {(currentUser?.username || 'A')[0].toUpperCase()}
+          </button>
+
+          {showUserMenu && (
+            <div
+              style={{
+                position: 'absolute',
+                right: 0,
+                top: 'calc(100% + 6px)',
+                width: '220px',
+                backgroundColor: 'var(--bg-surface-raised)',
+                border: '1px solid var(--border-default)',
+                borderRadius: 'var(--radius-md)',
+                boxShadow: 'var(--shadow-lg)',
+                zIndex: 60,
+                padding: '10px',
+                animation: 'fadeIn var(--transition-fast)'
+              }}
+            >
+              <div style={{ paddingBottom: '8px', borderBottom: '1px solid var(--border-default)', marginBottom: '6px' }}>
+                <div style={{ fontWeight: 600, fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>
+                  {currentUser?.username || activePersona.username}
+                </div>
+                <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
+                  {activePersona.badge}
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontSize: 'var(--text-xs)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', color: 'var(--text-secondary)' }}>
+                  <span>Node:</span>
+                  <span style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
+                    {currentUser?.institution_id || 'Coordinator'}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', color: 'var(--text-secondary)' }}>
+                  <span>Status:</span>
+                  <span style={{ color: 'var(--success)' }}>Authenticated</span>
+                </div>
+              </div>
+
+              {currentUser && onLogout && (
+                <div style={{ marginTop: '8px', paddingTop: '6px', borderTop: '1px solid var(--border-default)' }}>
+                  <button
+                    onClick={() => {
+                      onLogout();
+                      setShowUserMenu(false);
+                    }}
+                    style={{
+                      width: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      padding: '6px 8px',
+                      color: 'var(--danger)',
+                      fontSize: 'var(--text-xs)',
+                      borderRadius: 'var(--radius-xs)',
+                      backgroundColor: 'transparent'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = 'var(--danger-subtle)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                    }}
+                  >
+                    <LogOut size={12} />
+                    <span>Log Out</span>
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>

@@ -343,6 +343,7 @@ export default function App() {
       <Navbar 
         currentRole={currentRole}
         currentUser={currentUser}
+        currentTab={currentTab}
         onPersonaLogin={handlePersonaLogin}
         onLogout={handleLogout}
         onStartDemoTour={handleStartTour}

@@ -1,0 +1,178 @@
+/* ==========================================================================
+   TRUSTMESH DESIGN TOKENS
+   Calm, authoritative, precise, trustworthy enterprise fintech & security.
+   ========================================================================== */
+
+:root {
+  /* Typography */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SFMono-Regular', Consolas, monospace;
+
+  /* Typography Scale */
+  --text-xs: 11px;
+  --text-sm: 12px;
+  --text-base: 14px;
+  --text-md: 16px;
+  --text-lg: 20px;
+  --text-xl: 24px;
+  --text-2xl: 32px;
+
+  /* Color Foundations */
+  --bg-app: #0A1020;             /* Navy Background */
+  --bg-surface: #111827;         /* Graphite Surface */
+  --bg-surface-raised: #172033;  /* Raised Surface (Cards, Dropdowns) */
+  --bg-surface-hover: #1C2740;   /* Interactive Hover */
+  --bg-surface-active: #223050;  /* Active Selection */
+
+  /* Hairline Borders */
+  --border-subtle: #1E293B;
+  --border-default: #243049;     /* 1px Hairline Default */
+  --border-focus: #2F6BFF;
+  --border-muted: #1A2438;
+
+  /* Text Colors */
+  --text-primary: #E6ECF7;       /* High Contrast White-Blue */
+  --text-secondary: #9AA8C2;     /* Balanced Secondary */
+  --text-muted: #66748F;         /* De-emphasized Metadata */
+  --text-inverse: #0A1020;
+
+  /* Brand & Primary */
+  --primary: #2F6BFF;            /* Electric Blue */
+  --primary-hover: #4D83FF;
+  --primary-subtle: rgba(47, 107, 255, 0.14);
+  --primary-border: rgba(47, 107, 255, 0.35);
+
+  /* Secondary Accent (Data / Cryptographic Verified) */
+  --accent-cyan: #22D3EE;
+  --accent-cyan-subtle: rgba(34, 211, 238, 0.12);
+  --accent-cyan-border: rgba(34, 211, 238, 0.3);
+
+  /* Semantic Statuses */
+  --success: #22C55E;
+  --success-subtle: rgba(34, 197, 94, 0.12);
+  --success-border: rgba(34, 197, 94, 0.3);
+
+  --warning: #F59E0B;
+  --warning-subtle: rgba(245, 158, 11, 0.12);
+  --warning-border: rgba(245, 158, 11, 0.3);
+
+  --danger: #EF4444;
+  --danger-subtle: rgba(239, 68, 68, 0.12);
+  --danger-border: rgba(239, 68, 68, 0.3);
+
+  /* Risk Scale (Strict Color Guidance) */
+  --risk-low: #22C55E;
+  --risk-medium: #F59E0B;
+  --risk-high: #F97316;
+  --risk-critical: #EF4444;
+
+  /* Colorblind-Safe Chart Palette */
+  --chart-1: #3B82F6;            /* Blue */
+  --chart-2: #22D3EE;            /* Cyan */
+  --chart-3: #FBBF24;            /* Amber */
+  --chart-4: #FB7185;            /* Rose */
+  --chart-5: #A78BFA;            /* Violet (sparingly) */
+  --chart-grid: #1A253A;         /* Hairline Chart Grids */
+
+  /* 8px Spacing Grid */
+  --space-0-5: 4px;
+  --space-1: 8px;
+  --space-1-5: 12px;
+  --space-2: 16px;
+  --space-2-5: 20px;
+  --space-3: 24px;
+  --space-4: 32px;
+  --space-5: 40px;
+  --space-6: 48px;
+
+  /* Radii */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 12px;
+  --radius-full: 9999px;
+
+  /* Elevations */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px -2px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 12px 28px -6px rgba(0, 0, 0, 0.6);
+
+  /* Accessibility & Transitions */
+  --focus-ring: 0 0 0 2px var(--bg-app), 0 0 0 4px var(--primary);
+  --transition-fast: 120ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 180ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Base Reset & Tabular Nums */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Global Tabular Figures for Financial / Cryptographic Precision */
+.tabular-nums, code, pre, th, td, [data-mono] {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Accessibility Focus States */
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+/* Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-app);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-default);
+  border-radius: var(--radius-sm);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* Animations */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(2px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Respect Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+

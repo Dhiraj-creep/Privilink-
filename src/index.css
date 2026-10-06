@@ -1,9 +1,11 @@
-:root {
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  --font-mono: 'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+@import './tokens.css';
 
-  /* Premium Institutional Enterprise Security Palette: Dark Navy + Graphite + Slate + Electric Blue */
-  --primary-dark: #0F172A;        /* Slate 900 / Deep Executive Navy */
+:root {
+  --primary-dark: #0A1020;        /* Navy Background */
+  --primary-accent: #2F6BFF;      /* Electric Blue */
+  --primary-accent-hover: #4D83FF;
+  --primary-accent-subtle: rgba(47, 107, 255, 0.14);
+  --primary-accent-border: rgba(47, 107, 255, 0.35);
   --primary-accent: #0284C7;      /* Sky 600 / Controlled Electric Blue */
   --primary-accent-hover: #0369A1;
   --primary-accent-subtle: #F0F9FF; /* Sky 50 */
