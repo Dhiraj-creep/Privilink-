@@ -18,6 +18,7 @@ import EntityResolutionView from './views/EntityResolutionView';
 import SimulationLabView from './views/SimulationLabView';
 import AuditTrailView from './views/AuditTrailView';
 import ArchitectureScopeView from './views/ArchitectureScopeView';
+import ErrorBoundary from './components/ErrorBoundary';
 
 import { RISK_CASES } from './data/syntheticData';
 import { api } from './api/client';
@@ -373,86 +374,87 @@ export default function App() {
           overflowY: 'auto',
           backgroundColor: 'var(--bg-app)'
         }}>
+          <ErrorBoundary onReset={() => setCurrentTab('overview')}>
+            {/* Current Active View */}
+            {currentTab === 'overview' && (
+              <OverviewView 
+                onNavigate={setCurrentTab}
+                onSelectInstitution={handleSelectInstitution}
+                quarantinedLender={quarantinedLender}
+              />
+            )}
 
-          {/* Current Active View */}
-          {currentTab === 'overview' && (
-            <OverviewView 
-              onNavigate={setCurrentTab}
-              onSelectInstitution={handleSelectInstitution}
-              quarantinedLender={quarantinedLender}
-            />
-          )}
+            {currentTab === 'institutions' && (
+              <InstitutionNetworkView 
+                selectedInstitutionId={selectedInstitutionId}
+                onSelectInstitution={setSelectedInstitutionId}
+                quarantinedLender={quarantinedLender}
+                currentRole={currentRole}
+              />
+            )}
 
-          {currentTab === 'institutions' && (
-            <InstitutionNetworkView 
-              selectedInstitutionId={selectedInstitutionId}
-              onSelectInstitution={setSelectedInstitutionId}
-              quarantinedLender={quarantinedLender}
-              currentRole={currentRole}
-            />
-          )}
+            {currentTab === 'collaborative_risk' && (
+              <CollaborativeRiskView 
+                onSelectCase={handleSelectCase}
+                onNavigate={setCurrentTab}
+                casesList={cases}
+              />
+            )}
 
-          {currentTab === 'collaborative_risk' && (
-            <CollaborativeRiskView 
-              onSelectCase={handleSelectCase}
-              onNavigate={setCurrentTab}
-              casesList={cases}
-            />
-          )}
+            {currentTab === 'customer_investigation' && (
+              <CustomerInvestigationView 
+                caseData={selectedCase}
+                onBack={() => setCurrentTab('collaborative_risk')}
+                onNavigate={setCurrentTab}
+                onTriggerVerification={handleTriggerVerification}
+                onResolveVerification={handleResolveVerification}
+              />
+            )}
 
-          {currentTab === 'customer_investigation' && (
-            <CustomerInvestigationView 
-              caseData={selectedCase}
-              onBack={() => setCurrentTab('collaborative_risk')}
-              onNavigate={setCurrentTab}
-              onTriggerVerification={handleTriggerVerification}
-              onResolveVerification={handleResolveVerification}
-            />
-          )}
+            {currentTab === 'privacy_center' && (
+              <PrivacyCenterView 
+                onNavigate={setCurrentTab}
+              />
+            )}
 
-          {currentTab === 'privacy_center' && (
-            <PrivacyCenterView 
-              onNavigate={setCurrentTab}
-            />
-          )}
+            {currentTab === 'secure_aggregation' && (
+              <SecureAggregationLabView />
+            )}
 
-          {currentTab === 'secure_aggregation' && (
-            <SecureAggregationLabView />
-          )}
+            {currentTab === 'trust_security' && (
+              <TrustSecurityView 
+                quarantinedLender={quarantinedLender}
+                onTriggerMaliciousSimulation={handleTriggerMalicious}
+                onResetMaliciousSimulation={handleResetMalicious}
+              />
+            )}
 
-          {currentTab === 'trust_security' && (
-            <TrustSecurityView 
-              quarantinedLender={quarantinedLender}
-              onTriggerMaliciousSimulation={handleTriggerMalicious}
-              onResetMaliciousSimulation={handleResetMalicious}
-            />
-          )}
+            {currentTab === 'model_collaboration' && (
+              <ModelCollaborationView />
+            )}
 
-          {currentTab === 'model_collaboration' && (
-            <ModelCollaborationView />
-          )}
+            {currentTab === 'entity_resolution' && (
+              <EntityResolutionView />
+            )}
 
-          {currentTab === 'entity_resolution' && (
-            <EntityResolutionView />
-          )}
+            {currentTab === 'simulation_lab' && (
+              <SimulationLabView 
+                onRunCrossAnomaly={handleRunCrossAnomaly}
+                onSimulateMalicious={handleTriggerMalicious}
+                quarantinedLender={quarantinedLender}
+                onNavigate={setCurrentTab}
+                onOpenCase={handleOpenCaseById}
+              />
+            )}
 
-          {currentTab === 'simulation_lab' && (
-            <SimulationLabView 
-              onRunCrossAnomaly={handleRunCrossAnomaly}
-              onSimulateMalicious={handleTriggerMalicious}
-              quarantinedLender={quarantinedLender}
-              onNavigate={setCurrentTab}
-              onOpenCase={handleOpenCaseById}
-            />
-          )}
+            {currentTab === 'audit_trail' && (
+              <AuditTrailView dynamicLogs={dynamicLogs} />
+            )}
 
-          {currentTab === 'audit_trail' && (
-            <AuditTrailView dynamicLogs={dynamicLogs} />
-          )}
-
-          {currentTab === 'architecture_scope' && (
-            <ArchitectureScopeView />
-          )}
+            {currentTab === 'architecture_scope' && (
+              <ArchitectureScopeView />
+            )}
+          </ErrorBoundary>
         </main>
       </div>
 

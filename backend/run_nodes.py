@@ -127,9 +127,9 @@ if __name__ == "__main__":
             p.daemon = True
             p.start()
             
-        print("  ✓ Bank A Node running on http://127.0.0.1:8001")
-        print("  ✓ Insurer B Node running on http://127.0.0.1:8002")
-        print("  ✓ Lender C Node running on http://127.0.0.1:8003")
+        print("  [OK] Bank A Node running on http://127.0.0.1:8001")
+        print("  [OK] Insurer B Node running on http://127.0.0.1:8002")
+        print("  [OK] Lender C Node running on http://127.0.0.1:8003")
         
         try:
             for p in (p1, p2, p3):
