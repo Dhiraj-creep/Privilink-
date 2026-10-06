@@ -121,7 +121,7 @@ export default function EntityResolutionView() {
                     height: '20px',
                     borderRadius: '50%',
                     backgroundColor: isDone ? 'var(--primary-dark)' : 'var(--text-muted)',
-                    color: '#FCFBF7',
+                    color: '#F8FAFC',
                     fontSize: '0.675rem',
                     fontWeight: 700,
                     display: 'flex',
@@ -146,7 +146,7 @@ export default function EntityResolutionView() {
           borderRadius: 'var(--radius-lg)',
           padding: '26px',
           border: '1px solid var(--nav-border)',
-          color: '#FCFBF7'
+          color: '#F8FAFC'
         }}>
           {/* Top 3 Participant Inputs */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '18px', marginBottom: '26px' }}>
@@ -217,7 +217,7 @@ export default function EntityResolutionView() {
           }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '8px' }}>
               <Fingerprint size={22} color={matchingState === 'resolved' ? 'var(--muted-sage)' : 'var(--muted-sage)'} />
-              <h4 style={{ fontSize: '0.98rem', fontWeight: 700, color: '#FCFBF7' }}>
+              <h4 style={{ fontSize: '0.98rem', fontWeight: 700, color: '#F8FAFC' }}>
                 CRYPTOGRAPHIC BLIND INTERSECTION
               </h4>
             </div>
@@ -236,7 +236,7 @@ export default function EntityResolutionView() {
                 <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center' }}>
                   <div>
                     <span style={{ fontSize: '0.72rem', color: 'var(--muted-sage)' }}>MATCH CONFIDENCE</span>
-                    <p style={{ fontSize: '1.75rem', fontWeight: 700, color: '#FCFBF7', fontFamily: 'var(--font-mono)' }}>
+                    <p style={{ fontSize: '1.75rem', fontWeight: 700, color: '#F8FAFC', fontFamily: 'var(--font-mono)' }}>
                       98%
                     </p>
                   </div>
@@ -247,7 +247,7 @@ export default function EntityResolutionView() {
                     </p>
                   </div>
                 </div>
-                <p style={{ fontSize: '0.735rem', color: '#FCFBF7', marginTop: '10px' }}>
+                <p style={{ fontSize: '0.735rem', color: '#F8FAFC', marginTop: '10px' }}>
                   ✓ Match confirmed across Bank A, Insurer B, and Lender C with zero PII disclosure ({psiResult?.protocol || 'Diffie-Hellman Commutative PSI'}).
                 </p>
               </div>

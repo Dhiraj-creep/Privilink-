@@ -19,7 +19,7 @@ export default function OverviewView({ onNavigate, onSelectInstitution, quaranti
       value: '0', 
       sub: '100% on-premise privacy', 
       status: 'highlight',
-      badge: 'Zero-Knowledge'
+      badge: 'Zero Raw PII'
     },
     { label: 'PRIVACY STATUS', value: 'Protected', sub: 'Differential Privacy active', status: 'success' },
     { 
@@ -189,10 +189,10 @@ export default function OverviewView({ onNavigate, onSelectInstitution, quaranti
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
                   <Building2 size={16} color="var(--muted-sage)" />
-                  <span style={{ fontWeight: 700, fontSize: '0.85rem', color: '#FCFBF7' }}>BANK A</span>
+                  <span style={{ fontWeight: 700, fontSize: '0.85rem', color: '#F8FAFC' }}>BANK A</span>
                 </div>
                 <div style={{ fontSize: '0.715rem', color: 'var(--nav-text)' }}>
-                  Records: <span style={{ color: '#FCFBF7', fontWeight: 600 }}>250,000 synthetic</span>
+                  Records: <span style={{ color: '#F8FAFC', fontWeight: 600 }}>250,000 synthetic</span>
                 </div>
                 <div style={{ fontSize: '0.715rem', color: 'var(--nav-text)' }}>
                   Trust: <span style={{ color: 'var(--muted-sage)', fontWeight: 600 }}>96%</span> | Model: Healthy
@@ -202,7 +202,7 @@ export default function OverviewView({ onNavigate, onSelectInstitution, quaranti
                   fontSize: '0.625rem', 
                   padding: '3px 6px', 
                   backgroundColor: 'rgba(143, 175, 157, 0.15)', 
-                  color: '#FCFBF7', 
+                  color: '#F8FAFC', 
                   borderRadius: '3px',
                   display: 'flex',
                   alignItems: 'center',
@@ -231,10 +231,10 @@ export default function OverviewView({ onNavigate, onSelectInstitution, quaranti
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
                   <ShieldCheck size={16} color="var(--muted-sage)" />
-                  <span style={{ fontWeight: 700, fontSize: '0.85rem', color: '#FCFBF7' }}>INSURER B</span>
+                  <span style={{ fontWeight: 700, fontSize: '0.85rem', color: '#F8FAFC' }}>INSURER B</span>
                 </div>
                 <div style={{ fontSize: '0.715rem', color: 'var(--nav-text)' }}>
-                  Records: <span style={{ color: '#FCFBF7', fontWeight: 600 }}>118,000 synthetic</span>
+                  Records: <span style={{ color: '#F8FAFC', fontWeight: 600 }}>118,000 synthetic</span>
                 </div>
                 <div style={{ fontSize: '0.715rem', color: 'var(--nav-text)' }}>
                   Trust: <span style={{ color: 'var(--muted-sage)', fontWeight: 600 }}>92%</span> | Model: Healthy
@@ -244,7 +244,7 @@ export default function OverviewView({ onNavigate, onSelectInstitution, quaranti
                   fontSize: '0.625rem', 
                   padding: '3px 6px', 
                   backgroundColor: 'rgba(143, 175, 157, 0.15)', 
-                  color: '#FCFBF7', 
+                  color: '#F8FAFC', 
                   borderRadius: '3px',
                   display: 'flex',
                   alignItems: 'center',
@@ -284,7 +284,7 @@ export default function OverviewView({ onNavigate, onSelectInstitution, quaranti
               }}>
                 <Layers size={18} />
               </div>
-              <h4 style={{ color: '#FCFBF7', fontSize: '0.925rem', fontWeight: 700, letterSpacing: '-0.01em' }}>
+              <h4 style={{ color: '#F8FAFC', fontSize: '0.925rem', fontWeight: 700, letterSpacing: '-0.01em' }}>
                 TRUSTMESH
               </h4>
               <p style={{ color: 'var(--muted-sage)', fontSize: '0.715rem', fontWeight: 500 }}>
@@ -306,7 +306,7 @@ export default function OverviewView({ onNavigate, onSelectInstitution, quaranti
                 className="btn btn-sm"
                 style={{ 
                   backgroundColor: 'var(--secondary-green)', 
-                  color: '#FCFBF7', 
+                  color: '#F8FAFC', 
                   fontSize: '0.675rem',
                   padding: '4px 8px',
                   width: '100%',
@@ -343,10 +343,10 @@ export default function OverviewView({ onNavigate, onSelectInstitution, quaranti
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
                   <TrendingUp size={16} color={quarantinedLender ? 'var(--danger)' : 'var(--warning)'} />
-                  <span style={{ fontWeight: 700, fontSize: '0.85rem', color: '#FCFBF7' }}>LENDER C</span>
+                  <span style={{ fontWeight: 700, fontSize: '0.85rem', color: '#F8FAFC' }}>LENDER C</span>
                 </div>
                 <div style={{ fontSize: '0.715rem', color: 'var(--nav-text)' }}>
-                  Records: <span style={{ color: '#FCFBF7', fontWeight: 600 }}>184,000 synthetic</span>
+                  Records: <span style={{ color: '#F8FAFC', fontWeight: 600 }}>184,000 synthetic</span>
                 </div>
                 <div style={{ fontSize: '0.715rem', color: 'var(--nav-text)' }}>
                   Trust: <span style={{ color: quarantinedLender ? 'var(--danger)' : 'var(--warning)', fontWeight: 600 }}>
@@ -358,7 +358,7 @@ export default function OverviewView({ onNavigate, onSelectInstitution, quaranti
                   fontSize: '0.625rem', 
                   padding: '3px 6px', 
                   backgroundColor: quarantinedLender ? 'rgba(182, 74, 69, 0.2)' : 'rgba(197, 138, 50, 0.2)', 
-                  color: '#FCFBF7', 
+                  color: '#F8FAFC', 
                   borderRadius: '3px',
                   display: 'flex',
                   alignItems: 'center',

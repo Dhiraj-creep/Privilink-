@@ -27,9 +27,9 @@ export default function HackathonTourModal({
       width: '430px',
       maxWidth: 'calc(100vw - 48px)',
       backgroundColor: 'var(--nav-bg)',
-      color: '#FCFBF7',
+      color: '#F8FAFC',
       borderRadius: 'var(--radius-lg)',
-      boxShadow: '0 20px 30px -5px rgba(11, 42, 32, 0.4), 0 8px 12px -6px rgba(11, 42, 32, 0.3)',
+      boxShadow: '0 20px 30px -5px rgba(0, 0, 0, 0.5), 0 8px 12px -6px rgba(0, 0, 0, 0.4)',
       border: '1px solid var(--nav-border)',
       zIndex: 100,
       overflow: 'hidden'
@@ -65,7 +65,7 @@ export default function HackathonTourModal({
 
       {/* Body */}
       <div style={{ padding: '18px' }}>
-        <h4 style={{ fontSize: '1rem', fontWeight: 600, color: '#FCFBF7', marginBottom: '10px' }}>
+        <h4 style={{ fontSize: '1rem', fontWeight: 600, color: '#F8FAFC', marginBottom: '10px' }}>
           {current.title}
         </h4>
         
@@ -76,7 +76,7 @@ export default function HackathonTourModal({
           borderRadius: '0 var(--radius-sm) var(--radius-sm) 0',
           marginBottom: '12px',
           fontSize: '0.815rem',
-          color: '#E8EBE9',
+          color: '#F1F5F9',
           lineHeight: 1.45
         }}>
           <strong style={{ color: 'var(--muted-sage)' }}>Presenter Pitch: </strong>
@@ -84,7 +84,7 @@ export default function HackathonTourModal({
         </div>
 
         <p style={{ fontSize: '0.765rem', color: 'var(--nav-text)', lineHeight: 1.45, marginBottom: '16px' }}>
-          <strong style={{ color: '#FCFBF7' }}>Key Insight: </strong>
+          <strong style={{ color: '#F8FAFC' }}>Key Insight: </strong>
           {current.takeaway}
         </p>
 
@@ -131,7 +131,7 @@ export default function HackathonTourModal({
             className="btn btn-sm"
             style={{
               backgroundColor: 'var(--secondary-green)',
-              color: '#FCFBF7',
+              color: '#FFFFFF',
               border: '1px solid var(--muted-sage)',
               fontWeight: 600
             }}

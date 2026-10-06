@@ -153,6 +153,19 @@ export default function CollaborativeRiskView({ onSelectCase, casesList }) {
               </tr>
             </thead>
             <tbody>
+              {filteredCases.length === 0 && (
+                <tr>
+                  <td colSpan="8" style={{ padding: '48px 24px', textAlign: 'center' }}>
+                    <div className="empty-state">
+                      <Search size={28} style={{ color: 'var(--text-muted)', marginBottom: '8px' }} />
+                      <div style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: '0.9rem' }}>No Matching Risk Cases Found</div>
+                      <div style={{ color: 'var(--text-secondary)', fontSize: '0.785rem', marginTop: '4px' }}>
+                        Try adjusting your search terms or clearing the risk level filter.
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              )}
               {filteredCases.map((c) => {
                 const isHigh = c.riskLevel === 'HIGH';
                 const isMed = c.riskLevel === 'MEDIUM';

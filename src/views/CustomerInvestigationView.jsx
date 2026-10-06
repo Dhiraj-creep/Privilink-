@@ -277,7 +277,7 @@ export default function CustomerInvestigationView({
                 Cross-Institutional Signal Breakdown
               </h3>
               <p style={{ fontSize: '0.765rem', color: 'var(--text-secondary)' }}>
-                Multi-institution signal alignment with strict zero-knowledge boundaries.
+                Multi-institution signal alignment with strict sovereign cryptographic boundaries.
               </p>
             </div>
             <span className="badge badge-warning">Isolated Weak Signals</span>

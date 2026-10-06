@@ -349,6 +349,8 @@ export default function App() {
         alertCount={notifications.length}
         notifications={notifications}
         backendConnected={backendConnected}
+        appMode={appMode}
+        onToggleAppMode={setAppMode}
       />
 
       {/* Main Layout Area */}
@@ -363,28 +365,13 @@ export default function App() {
         {/* Viewport Content */}
         <main style={{
           flex: 1,
-          padding: '28px 36px',
+          padding: '24px 32px',
           maxWidth: '1440px',
           margin: '0 auto',
           width: '100%',
           overflowY: 'auto',
           backgroundColor: 'var(--bg-app)'
         }}>
-          {/* Quick Sub-navigation / Mode Switcher bar */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
-            <button
-              onClick={() => setAppMode('landing')}
-              style={{
-                fontSize: '0.765rem',
-                color: 'var(--secondary-green)',
-                fontWeight: 600,
-                textDecoration: 'underline',
-                cursor: 'pointer'
-              }}
-            >
-              ← Back to Landing Page & Value Proposition
-            </button>
-          </div>
 
           {/* Current Active View */}
           {currentTab === 'overview' && (

@@ -245,14 +245,14 @@ export default function ModelCollaborationView() {
           {/* Projection into Unified Embedding Vector */}
           <div style={{
             backgroundColor: 'var(--nav-bg)',
-            color: '#FCFBF7',
+            color: '#F8FAFC',
             borderRadius: 'var(--radius-lg)',
             padding: '24px',
             border: '1px solid var(--nav-border)'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
               <Layers size={18} color="var(--muted-sage)" />
-              <h4 style={{ fontSize: '0.925rem', fontWeight: 700, color: '#FCFBF7' }}>
+              <h4 style={{ fontSize: '0.925rem', fontWeight: 700, color: '#F8FAFC' }}>
                 LOCAL ENCODER ➔ COMMON RISK REPRESENTATION (LATENT EMBEDDING)
               </h4>
             </div>
@@ -268,7 +268,7 @@ export default function ModelCollaborationView() {
               </div>
               <div style={{ padding: '12px', backgroundColor: 'var(--nav-surface)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--nav-border)' }}>
                 <span style={{ fontSize: '0.685rem', color: 'var(--nav-text)' }}>Dimension: Behavioural Anomaly</span>
-                <p style={{ fontSize: '1.2rem', fontWeight: 700, color: '#FCFBF7', fontFamily: 'var(--font-mono)' }}>0.64</p>
+                <p style={{ fontSize: '1.2rem', fontWeight: 700, color: '#F8FAFC', fontFamily: 'var(--font-mono)' }}>0.64</p>
               </div>
               <div style={{ padding: '12px', backgroundColor: 'var(--nav-surface)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--nav-border)' }}>
                 <span style={{ fontSize: '0.685rem', color: 'var(--nav-text)' }}>Dimension: Financial Instability</span>

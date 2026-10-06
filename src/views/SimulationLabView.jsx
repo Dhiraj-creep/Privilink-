@@ -37,7 +37,7 @@ export default function SimulationLabView({
       setTimelineEvents([
         { time: '10:01:00', label: 'Initiating baseline synchronization', status: 'done', detail: 'All 3 nodes online and healthy' },
         { time: '10:01:04', label: 'Local model checks executed', status: 'done', detail: 'Bank A, Insurer B, Lender C passed variance test' },
-        { time: '10:01:08', label: 'Zero-knowledge aggregation complete', status: 'done', detail: 'Global model weights updated without error' },
+        { time: '10:01:08', label: 'Numerical Secure Aggregation complete', status: 'done', detail: 'Global model weights updated without error' },
         { time: '10:01:12', label: 'Risk Telemetry: 100% Nominal', status: 'done', detail: 'Zero anomalies flagged across 1,284 customer entities' }
       ]);
       setIsSimulating(false);

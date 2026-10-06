@@ -195,7 +195,7 @@ export default function InstitutionNetworkView({
                 alignItems: 'center',
                 justifyContent: 'center'
               }}>
-                <ShieldCheck size={20} color="#FCFBF7" />
+                <ShieldCheck size={20} color="#F8FAFC" />
               </div>
               <div>
                 <h3 style={{ fontSize: '0.98rem', fontWeight: 700, color: 'var(--primary-dark)' }}>
@@ -310,7 +310,7 @@ export default function InstitutionNetworkView({
             width: '42px',
             height: '42px',
             borderRadius: '50%',
-            backgroundColor: 'rgba(143, 175, 157, 0.15)',
+            backgroundColor: 'rgba(2, 132, 199, 0.15)',
             color: 'var(--muted-sage)',
             display: 'flex',
             alignItems: 'center',
@@ -321,17 +321,17 @@ export default function InstitutionNetworkView({
           </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span style={{ fontWeight: 700, fontSize: '0.925rem', color: '#FCFBF7', letterSpacing: '0.03em' }}>
+              <span style={{ fontWeight: 700, fontSize: '0.925rem', color: '#F8FAFC', letterSpacing: '0.03em' }}>
                 STRICT PRIVACY BOUNDARY: PRIVATE TO {currentInst.shortName.toUpperCase()}
               </span>
-              <span className="badge badge-demo" style={{ fontSize: '0.65rem', backgroundColor: '#1A4335', color: '#E8EBE9', borderColor: '#2F6B4F' }}>
+              <span className="badge badge-demo" style={{ fontSize: '0.65rem', backgroundColor: '#111827', color: '#38BDF8', borderColor: '#1E293B' }}>
                 Zero External Visibility
               </span>
             </div>
             <p style={{ fontSize: '0.785rem', color: 'var(--nav-text)', marginTop: '3px' }}>
               The raw features and records below exist strictly within {currentInst.name}'s perimeter. They are 
-              <strong style={{ color: '#FCFBF7' }}> NOT visible to other participants</strong> and 
-              <strong style={{ color: '#FCFBF7' }}> NEVER transmitted</strong> to the central TRUSTMESH node.
+              <strong style={{ color: '#F8FAFC' }}> NOT visible to other participants</strong> and 
+              <strong style={{ color: '#F8FAFC' }}> NEVER transmitted</strong> to the central TRUSTMESH coordinator.
             </p>
           </div>
         </div>
@@ -345,7 +345,7 @@ export default function InstitutionNetworkView({
           textAlign: 'right'
         }}>
           <span style={{ color: 'var(--muted-sage)', fontWeight: 600 }}>Local Model:</span><br/>
-          <span style={{ color: '#FCFBF7', fontFamily: 'var(--font-mono)' }}>PyTorch FedPer Local Head</span>
+          <span style={{ color: '#F8FAFC', fontFamily: 'var(--font-mono)' }}>PyTorch FedPer Local Head</span>
         </div>
       </div>
 

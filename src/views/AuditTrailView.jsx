@@ -189,7 +189,7 @@ export default function AuditTrailView({ dynamicLogs = [] }) {
                 border: 'none',
                 cursor: 'pointer',
                 backgroundColor: auditMode === 'operational' ? 'var(--primary-dark)' : 'transparent',
-                color: auditMode === 'operational' ? '#FCFBF7' : 'var(--text-secondary)',
+                color: auditMode === 'operational' ? '#F8FAFC' : 'var(--text-secondary)',
                 transition: 'all 0.15s ease'
               }}
             >
@@ -212,7 +212,7 @@ export default function AuditTrailView({ dynamicLogs = [] }) {
                 border: 'none',
                 cursor: 'pointer',
                 backgroundColor: auditMode === 'sandbox' ? 'var(--primary-dark)' : 'transparent',
-                color: auditMode === 'sandbox' ? '#FCFBF7' : 'var(--text-secondary)',
+                color: auditMode === 'sandbox' ? '#F8FAFC' : 'var(--text-secondary)',
                 transition: 'all 0.15s ease'
               }}
             >

@@ -30,10 +30,10 @@ export default function LandingPageView({ onEnterApp, onStartTour, onRunSimulati
         borderBottom: '1px solid var(--nav-border)'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span className="badge badge-demo" style={{ fontSize: '0.625rem', backgroundColor: '#1A4335', color: '#E8EBE9', borderColor: '#2F6B4F' }}>
+          <span className="badge badge-demo" style={{ fontSize: '0.625rem', backgroundColor: '#111827', color: '#38BDF8', borderColor: '#1E293B' }}>
             Prototype Platform
           </span>
-          <span style={{ color: '#E8EBE9' }}>Privacy-Preserving Cross-Institution Risk Intelligence</span>
+          <span style={{ color: '#F1F5F9' }}>Privacy-Preserving Cross-Institution Risk Intelligence</span>
         </div>
         <div>
           <span style={{ color: 'var(--muted-sage)' }}>Synthetic Demonstration Data • Zero PII</span>
@@ -250,7 +250,7 @@ export default function LandingPageView({ onEnterApp, onStartTour, onRunSimulati
         gap: '12px'
       }}>
         <div>
-          <strong style={{ color: '#FCFBF7' }}>TRUSTMESH</strong> • Privacy-Preserving Cross-Institution Risk Intelligence
+          <strong style={{ color: '#F8FAFC' }}>TRUSTMESH</strong> • Privacy-Preserving Cross-Institution Risk Intelligence
         </div>
         <div>
           <span>Synthetic Demonstration Prototype • Non-Production Banking Simulation</span>

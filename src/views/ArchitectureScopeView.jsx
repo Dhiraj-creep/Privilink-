@@ -61,7 +61,7 @@ export default function ArchitectureScopeView() {
             fontFamily: 'var(--font-mono)',
             fontSize: '0.765rem',
             backgroundColor: 'var(--nav-bg)',
-            color: '#FCFBF7',
+            color: '#F8FAFC',
             padding: '24px',
             borderRadius: 'var(--radius-md)',
             border: '1px solid var(--nav-border)',

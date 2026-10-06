@@ -163,7 +163,7 @@ export default function SecureAggregationLabView() {
                   height: '20px',
                   borderRadius: '50%',
                   backgroundColor: stage >= s.step ? 'var(--primary-dark)' : 'var(--text-muted)',
-                  color: '#FCFBF7',
+                  color: '#F8FAFC',
                   fontSize: '0.675rem',
                   fontWeight: 700,
                   display: 'flex',
@@ -187,7 +187,7 @@ export default function SecureAggregationLabView() {
           borderRadius: 'var(--radius-lg)',
           padding: '26px',
           border: '1px solid var(--nav-border)',
-          color: '#FCFBF7'
+          color: '#F8FAFC'
         }}>
           {/* Top Row: 3 Participants */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '18px', marginBottom: '26px' }}>
@@ -203,7 +203,7 @@ export default function SecureAggregationLabView() {
               <span style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--muted-sage)' }}>BANK A</span>
               <div style={{ marginTop: '8px', fontSize: '0.735rem', fontFamily: 'var(--font-mono)' }}>
                 {stage === 0 && <span style={{ color: 'var(--nav-text)' }}>Local vector: [0.12, -0.05, 0.33, ...]</span>}
-                {stage >= 1 && <span style={{ color: '#FCFBF7' }}>Blinded: v_A + S_AB + S_AC</span>}
+                {stage >= 1 && <span style={{ color: '#F8FAFC' }}>Blinded: v_A + S_AB + S_AC</span>}
               </div>
             </div>
 
@@ -218,7 +218,7 @@ export default function SecureAggregationLabView() {
               <span style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--muted-sage)' }}>INSURER B</span>
               <div style={{ marginTop: '8px', fontSize: '0.735rem', fontFamily: 'var(--font-mono)' }}>
                 {stage === 0 && <span style={{ color: 'var(--nav-text)' }}>Local vector: [-0.08, 0.22, 0.15, ...]</span>}
-                {stage >= 1 && <span style={{ color: '#FCFBF7' }}>Blinded: v_B - S_AB + S_BC</span>}
+                {stage >= 1 && <span style={{ color: '#F8FAFC' }}>Blinded: v_B - S_AB + S_BC</span>}
               </div>
             </div>
 
@@ -239,7 +239,7 @@ export default function SecureAggregationLabView() {
                 ) : (
                   <>
                     {stage === 0 && <span style={{ color: 'var(--nav-text)' }}>Local vector: [0.05, -0.12, 0.18, ...]</span>}
-                    {stage >= 1 && <span style={{ color: '#FCFBF7' }}>Blinded: v_C - S_AC - S_BC</span>}
+                    {stage >= 1 && <span style={{ color: '#F8FAFC' }}>Blinded: v_C - S_AC - S_BC</span>}
                   </>
                 )}
               </div>
@@ -258,7 +258,7 @@ export default function SecureAggregationLabView() {
           }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '8px' }}>
               <ShieldCheck size={18} color="var(--muted-sage)" />
-              <span style={{ fontWeight: 700, fontSize: '0.925rem', color: '#FCFBF7' }}>
+              <span style={{ fontWeight: 700, fontSize: '0.925rem', color: '#F8FAFC' }}>
                 CENTRAL SECURE AGGREGATOR (SecAgg Coordinator)
               </span>
             </div>
@@ -284,7 +284,7 @@ export default function SecureAggregationLabView() {
                 border: '1px solid var(--success)',
                 fontSize: '0.75rem',
                 fontFamily: 'var(--font-mono)',
-                color: '#FCFBF7'
+                color: '#F8FAFC'
               }}>
                 <div>Sum: Σ(v_i + M_i) = Σ v_i + Σ M_i = Σ v_i</div>
                 <div style={{ color: 'var(--muted-sage)', marginTop: '4px' }}>
