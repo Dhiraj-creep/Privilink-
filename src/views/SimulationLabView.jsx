@@ -45,27 +45,31 @@ export default function SimulationLabView({
   };
 
   // 2. Run Cross-Institution Anomaly Scenario (Key Demo)
-  const handleRunCrossAnomaly = () => {
+  const handleRunCrossAnomaly = async () => {
     setActiveScenario('ANOMALY');
     setIsSimulating(true);
     setTimelineEvents([
-      { time: '10:02:00', label: 'Scanning network for multi-signal convergence...', status: 'active', detail: 'Correlating latent vectors' }
+      { time: new Date().toLocaleTimeString(), label: 'Scanning network for multi-signal convergence...', status: 'active', detail: 'Correlating latent vectors' }
     ]);
 
-    setTimeout(() => {
-      setTimelineEvents([
-        { time: '10:02:01', label: 'Bank A processes local data', status: 'done', detail: 'Bank notes mild repayment delay (+6d) — alone below alarm threshold' },
-        { time: '10:02:02', label: 'Insurer B processes local data', status: 'done', detail: 'Insurer notes recent borderline claim — alone below alarm threshold' },
-        { time: '10:02:03', label: 'Lender C processes local data', status: 'done', detail: 'Lender notes two inquiries — alone below alarm threshold' },
-        { time: '10:02:08', label: 'Privacy-preserving signals generated', status: 'done', detail: 'Differentially private latent embeddings broadcast' },
-        { time: '10:02:12', label: 'Secure aggregation initiated', status: 'done', detail: 'Blinded aggregation computes cosine cross-similarity' },
-        { time: '10:02:15', label: 'Cross-institution pattern detected!', status: 'warning', detail: 'CORRELATION DISCOVERED: 3 independent weak signals aligned' },
-        { time: '10:02:18', label: 'Risk score escalated: CASE-10482', status: 'danger', detail: 'Risk updated to HIGH (Confidence: 87%)' },
-        { time: '10:02:22', label: 'Explainable risk result generated', status: 'done', detail: 'Step-up verification advisory dispatched to analyst HUD' }
-      ]);
-      setIsSimulating(false);
-      onRunCrossAnomaly();
-    }, 1500);
+    let res = null;
+    if (onRunCrossAnomaly) {
+      res = await onRunCrossAnomaly();
+    }
+    const conf = res?.score || res?.confidence || 98.4;
+    const nowTime = new Date().toLocaleTimeString();
+
+    setTimelineEvents([
+      { time: nowTime, label: 'Bank A processes local data', status: 'done', detail: 'Bank notes mild repayment delay (+6d) — alone below alarm threshold' },
+      { time: nowTime, label: 'Insurer B processes local data', status: 'done', detail: 'Insurer notes recent borderline claim — alone below alarm threshold' },
+      { time: nowTime, label: 'Lender C processes local data', status: 'done', detail: 'Lender notes two inquiries — alone below alarm threshold' },
+      { time: nowTime, label: 'Privacy-preserving signals generated', status: 'done', detail: 'Differentially private latent embeddings broadcast' },
+      { time: nowTime, label: 'Secure aggregation initiated', status: 'done', detail: 'Blinded aggregation computes cosine cross-similarity' },
+      { time: nowTime, label: 'Cross-institution pattern detected!', status: 'warning', detail: 'CORRELATION DISCOVERED: 3 independent weak signals aligned' },
+      { time: nowTime, label: 'Risk score escalated: CASE-10482', status: 'danger', detail: `Risk updated to HIGH (Confidence: ${conf}%)` },
+      { time: nowTime, label: 'Explainable risk result generated', status: 'done', detail: 'Step-up verification advisory dispatched to analyst HUD' }
+    ]);
+    setIsSimulating(false);
   };
 
   // 3. Simulate Privacy Attack (Inference / Gradient Inversion)

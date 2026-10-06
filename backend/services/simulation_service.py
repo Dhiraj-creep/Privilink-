@@ -88,12 +88,34 @@ class SimulationService:
             "lender_dti_synthetic_band": "Tier D"
         }
 
-        # Run real VFL model inference
+        # 1. Update sovereign records across participant nodes
+        from backend.nodes.bank_node import BankNodeService
+        from backend.nodes.insurer_node import InsurerNodeService
+        from backend.nodes.lender_node import LenderNodeService
+
+        BankNodeService().update_record("ENTITY-7F21", {
+            "repayment_behaviour_ratio": 0.82,
+            "transaction_velocity_anomaly": 2.1,
+            "local_flag": "Weak Anomaly"
+        })
+        InsurerNodeService().update_record("ENTITY-7F21", {
+            "claim_frequency_rate": 3.2,
+            "claim_anomaly_score": 72.0,
+            "local_flag": "Weak Anomaly"
+        })
+        LenderNodeService().update_record("ENTITY-7F21", {
+            "loan_application_velocity": 3,
+            "repayment_stress_indicator": 78.0,
+            "credit_utilization_trajectory": 84.0,
+            "local_flag": "Weak Anomaly"
+        })
+
+        # 2. Run distributed VFL model inference across sovereign nodes
         if self.vfl_engine.vfl_model is None:
             self.vfl_engine.train_and_evaluate()
 
-        prediction = self.vfl_engine.predict_case(anomaly_features)
-        score = round(prediction["collaborative_confidence"], 1)
+        prediction = self.vfl_engine.predict_distributed("ENTITY-7F21", fallback_features=anomaly_features)
+        score = float(prediction["score"])
         confidence = score
         risk_level = prediction["risk_level"]
         contributions = prediction["contributions"]
@@ -139,7 +161,7 @@ class SimulationService:
             {"time": t, "label": "Privacy-preserving signals generated", "status": "done", "detail": "Differentially private latent embeddings broadcast (epsilon=1.5)"},
             {"time": t, "label": "Secure aggregation initiated", "status": "done", "detail": "Blinded aggregation computes cosine cross-similarity"},
             {"time": t, "label": "Cross-institution pattern detected!", "status": "warning", "detail": "CORRELATION DISCOVERED: 3 independent weak signals aligned"},
-            {"time": t, "label": "Risk score escalated: CASE-10482", "status": "danger", "detail": "Risk updated to HIGH (Confidence: 87%)"},
+            {"time": t, "label": "Risk score escalated: CASE-10482", "status": "danger", "detail": f"Risk updated to {risk_level} (Confidence: {score}%)"},
             {"time": t, "label": "Explainable risk result generated", "status": "done", "detail": "Step-up verification advisory dispatched to analyst HUD"}
         ]
 
@@ -152,7 +174,8 @@ class SimulationService:
             "target_case_id": "CASE-10482",
             "timeline": timeline,
             "audit_hash": audit["hash"],
-            "state": state
+            "state": state,
+            "prediction": prediction
         }
 
     def run_privacy_attack_demo(self) -> Dict[str, Any]:
@@ -210,6 +233,28 @@ class SimulationService:
         state["quarantined_lender"] = False
         state["active_scenario"] = "NORMAL"
         self.save_network_state(state)
+
+        # Reset sovereign records across participant nodes
+        from backend.nodes.bank_node import BankNodeService
+        from backend.nodes.insurer_node import InsurerNodeService
+        from backend.nodes.lender_node import LenderNodeService
+
+        BankNodeService().update_record("ENTITY-7F21", {
+            "repayment_behaviour_ratio": 0.78,
+            "transaction_velocity_anomaly": 0.8,
+            "local_flag": "Normal"
+        })
+        InsurerNodeService().update_record("ENTITY-7F21", {
+            "claim_frequency_rate": 0.55,
+            "claim_anomaly_score": 42.0,
+            "local_flag": "Normal"
+        })
+        LenderNodeService().update_record("ENTITY-7F21", {
+            "loan_application_velocity": 2,
+            "repayment_stress_indicator": 48.0,
+            "credit_utilization_trajectory": 58.0,
+            "local_flag": "Normal"
+        })
 
         # Reset CASE-10482 to baseline review
         now = datetime.now(timezone.utc).isoformat()

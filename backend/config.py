@@ -1,8 +1,10 @@
 """
 TRUSTMESH Configuration
-Centralized configuration parameters, directory paths, ports, seeds, and cryptographic constants.
+Centralized configuration parameters, directory paths, ports, seeds, environment variables,
+and cryptographic constants.
 """
 
+import os
 from pathlib import Path
 
 # Base Paths
@@ -17,15 +19,27 @@ INSURER_B_DB_PATH = DATA_STORE_DIR / "nodes" / "insurer_b" / "insurer_b.db"
 LENDER_C_DB_PATH = DATA_STORE_DIR / "nodes" / "lender_c" / "lender_c.db"
 ML_ARTIFACTS_DIR = BACKEND_DIR / "ml" / "artifacts"
 
-# Server Ports
-COORDINATOR_PORT = 8000
-BANK_A_PORT = 8001
-INSURER_B_PORT = 8002
-LENDER_C_PORT = 8003
+# Environment and Execution Mode
+TRUSTMESH_ENV = os.getenv("TRUSTMESH_ENV", "development").lower()
+ALLOW_DEMO_SHORTCUTS = os.getenv("TRUSTMESH_ALLOW_DEMO_SHORTCUTS", "true").lower() in ("true", "1", "yes")
+
+# Server Ports & URLs
+COORDINATOR_PORT = int(os.getenv("COORDINATOR_PORT", "8000"))
+BANK_A_PORT = int(os.getenv("BANK_A_PORT", "8001"))
+INSURER_B_PORT = int(os.getenv("INSURER_B_PORT", "8002"))
+LENDER_C_PORT = int(os.getenv("LENDER_C_PORT", "8003"))
+
+BANK_A_URL = os.getenv("BANK_A_URL", f"http://127.0.0.1:{BANK_A_PORT}")
+INSURER_B_URL = os.getenv("INSURER_B_URL", f"http://127.0.0.1:{INSURER_B_PORT}")
+LENDER_C_URL = os.getenv("LENDER_C_URL", f"http://127.0.0.1:{LENDER_C_PORT}")
+
+# CORS Configuration
+_cors_raw = os.getenv("CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000")
+CORS_ORIGINS = [origin.strip() for origin in _cors_raw.split(",") if origin.strip()]
 
 # ML / Synthetic Data Parameters
-SYNTHETIC_DATA_SEED = 42
-TOTAL_SYNTHETIC_RECORDS = 1500  # Realistic laptop-friendly benchmark population
+SYNTHETIC_DATA_SEED = int(os.getenv("SYNTHETIC_DATA_SEED", "42"))
+TOTAL_SYNTHETIC_RECORDS = int(os.getenv("TOTAL_SYNTHETIC_RECORDS", "1500"))
 FEATURE_DIMS = {
     "BANK_A": 5,
     "INSURER_B": 5,
@@ -33,9 +47,9 @@ FEATURE_DIMS = {
 }
 
 # Cryptographic & Privacy Parameters
-DEFAULT_EPSILON = 1.5
-DEFAULT_DELTA = 1e-5
-CLIP_NORM = 1.0
+DEFAULT_EPSILON = float(os.getenv("DEFAULT_EPSILON", "1.5"))
+DEFAULT_DELTA = float(os.getenv("DEFAULT_DELTA", "1e-5"))
+CLIP_NORM = float(os.getenv("CLIP_NORM", "1.0"))
 
 # 256-bit safe prime for commutative Diffie-Hellman Private Set Intersection (RFC 3526 MODP Group 14 subset or 256-bit prime)
 DH_PRIME_HEX = (
@@ -54,6 +68,13 @@ DH_PRIME_HEX = (
 DH_PRIME = int(DH_PRIME_HEX, 16)
 DH_GENERATOR = 2
 
-# JWT / Secret Key for local demo session
-AUTH_SECRET_KEY = "trustmesh-local-evaluation-insecure-demo-secret-key-2026"
-AUTH_ALGORITHM = "HS256"
+# JWT / Secret Key Management
+DEFAULT_DEV_SECRET = "trustmesh-local-evaluation-insecure-demo-secret-key-2026"
+AUTH_SECRET_KEY = os.getenv("TRUSTMESH_SECRET_KEY", DEFAULT_DEV_SECRET)
+AUTH_ALGORITHM = os.getenv("TRUSTMESH_AUTH_ALGORITHM", "HS256")
+
+if TRUSTMESH_ENV == "production" and (not AUTH_SECRET_KEY or AUTH_SECRET_KEY == DEFAULT_DEV_SECRET):
+    raise RuntimeError(
+        "Production Security Failure: Essential secret 'TRUSTMESH_SECRET_KEY' is missing or set to default dev key. "
+        "Set a cryptographically strong key in environment before starting in production mode."
+    )

@@ -140,22 +140,24 @@ export const RISK_CASES = [
     id: 'CASE-10482',
     customerId: 'CUSTOMER-10482',
     entityRef: 'ENTITY-7F21',
-    riskLevel: 'HIGH',
+    riskLevel: 'MEDIUM',
     localSignals: '3 weak signals',
-    collaborativeSignal: 'Cross-institution anomaly',
-    confidence: 87,
-    action: 'Step-up verification',
+    collaborativeSignal: 'Cross-institution pattern candidate',
+    confidence: 42,
+    score: 42,
+    action: 'Standard monitoring',
+    status: 'PENDING_REVIEW',
     privacyStatus: 'Protected',
-    lastEscalation: '3 mins ago',
-    explanation: 'Multiple weak, independent signals align across banking, insurance, and lending vectors.',
+    lastEscalation: '14 mins ago',
+    explanation: 'Independent indicators slightly deviated from rolling baseline; collaborative threshold not yet reached.',
     localEvidence: {
       bank: {
-        signalText: 'Repayment behaviour changed significantly.',
+        signalText: 'Repayment behaviour changed slightly.',
         severity: 'Weak / Moderate (Score: 0.42)',
         detail: 'Mild variance in usual payment date (+6 days), but still within standard grace window.'
       },
       insurer: {
-        signalText: 'Privacy-preserving external anomaly signal received.',
+        signalText: 'Privacy-preserving external signal received.',
         severity: 'Weak / Inconclusive (Score: 0.38)',
         detail: 'Recent first-time claim submission following policy update, borderline deviation score.'
       },
@@ -165,19 +167,17 @@ export const RISK_CASES = [
         detail: 'Two short-term facility inquiries within 14 days; standalone lender threshold not breached.'
       }
     },
-    collaborativeSynthesis: 'Individually, none of the 3 institutions held sufficient basis for escalation. When privacy-preserving latent embeddings were securely combined, the cross-institution signal alignment surfaced a correlated stress pattern (Synthetic joint anomaly probability 0.87).',
+    collaborativeSynthesis: 'Individually, none of the 3 institutions held sufficient basis for escalation. Standard monitoring active until collaborative synthesis is executed.',
     contributions: [
       { name: 'Local financial behaviour', score: 35, color: '#12372A' },
       { name: 'Cross-institution signal alignment', score: 28, color: '#2F6B4F' },
-      { name: 'Behavioural deviation index', score: 25, color: '#8FAF9D' },
-      { name: 'Temporal anomaly velocity', score: 12, color: '#66736B' }
+      { name: 'Borrowing behaviour deviation', score: 37, color: '#8FAF9D' }
     ],
     minimumDisclosure: {
       disclosedToAnalyst: [
-        'Composite Risk Score: HIGH (Confidence: 87%)',
-        'Primary Risk Archetype: Cross-institution synchronized behavioural deviation',
-        'Temporal velocity indicator: Multi-signal convergence over past 18 days',
-        'Recommended Protocol: Step-up KYC & source of funds verification'
+        'Composite Risk Score: MEDIUM (Confidence: 42%)',
+        'Primary Archetype: Cross-institution baseline monitoring',
+        'Recommended Protocol: Automated surveillance / standard review'
       ],
       strictlyProtected: [
         'Customer Legal Name, National ID, Phone, Email, Residential Address',

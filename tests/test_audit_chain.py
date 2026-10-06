@@ -76,3 +76,37 @@ def test_audit_tamper_detection(temp_audit_chain):
     assert verify_res["valid"] is False
     assert verify_res["broken_index"] == 1
     assert "Tampering detected" in verify_res["error"]
+
+
+def test_audit_sandbox_tamper_isolation(temp_audit_chain):
+    """
+    Verify that tampering in the disposable sandbox ledger is detected
+    while the operational ledger remains cryptographically valid and pristine.
+    """
+    temp_audit_chain.append_event(
+        actor="ANALYST_01", role="RISK_ANALYST", action="CASE_INSPECTED", target_id="CASE-10482", details="Event 1"
+    )
+    temp_audit_chain.append_event(
+        actor="ANALYST_02", role="RISK_ANALYST", action="CASE_INSPECTED", target_id="CASE-10491", details="Event 2"
+    )
+
+    # Operational chain is valid
+    assert temp_audit_chain.verify_chain()["valid"] is True
+
+    # Tamper with index 1 in the sandbox
+    tamper_res = temp_audit_chain.simulate_sandbox_tamper(target_idx=1)
+    assert tamper_res["success"] is True
+
+    # Sandbox verification must detect the break
+    sandbox_verify = temp_audit_chain.verify_sandbox()
+    assert sandbox_verify["valid"] is False
+    assert sandbox_verify["broken_index"] == 1
+
+    # CRITICAL: Operational ledger MUST remain completely valid and intact
+    operational_verify = temp_audit_chain.verify_chain()
+    assert operational_verify["valid"] is True, "Operational ledger must NOT be corrupted by sandbox tampering"
+
+    # Resetting sandbox restores its cryptographic integrity
+    reset_res = temp_audit_chain.reset_sandbox()
+    assert reset_res["success"] is True
+    assert temp_audit_chain.verify_sandbox()["valid"] is True

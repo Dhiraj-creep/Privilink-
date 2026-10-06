@@ -2,7 +2,7 @@
 ### Privacy-Preserving Cross-Institution Risk Intelligence
 > **“Share intelligence. Not customer data.”**
 
-[![Build Status](https://img.shields.io/badge/tests-24%2F24%20passing-brightgreen.svg)]()
+[![Build Status](https://img.shields.io/badge/tests-28%2F28%20passing-brightgreen.svg)]()
 [![Linter](https://img.shields.io/badge/oxlint-0%20warnings%200%20errors-brightgreen.svg)]()
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)]()
 [![Federated-Learning](https://img.shields.io/badge/VFL-Vertical%20Partitioning-teal.svg)]()

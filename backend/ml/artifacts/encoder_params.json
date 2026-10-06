@@ -1,0 +1,71 @@
+{
+  "BANK_A": {
+    "mean": [
+      0.8985052430886558,
+      0.1433686367969495,
+      91.65490943755958,
+      2.981887511916111,
+      0.8748319351763585
+    ],
+    "scale": [
+      0.07028910651667375,
+      0.8422570436323371,
+      47.83678037793696,
+      1.0187264066648272,
+      0.08468516819532418
+    ],
+    "feature_names": [
+      "bank_repayment_behaviour_ratio",
+      "bank_transaction_velocity_anomaly",
+      "bank_account_tenure_months",
+      "bank_average_monthly_balance_tier",
+      "bank_payment_consistency_index"
+    ]
+  },
+  "INSURER_B": {
+    "mean": [
+      0.18282488083889417,
+      19.87415633937083,
+      1425.9275500476645,
+      0.2778025738798856,
+      1.221163012392755
+    ],
+    "scale": [
+      0.22247765710938036,
+      11.673470769560318,
+      725.8837961437785,
+      0.19198604469225933,
+      0.4460291717418166
+    ],
+    "feature_names": [
+      "ins_claim_frequency_rate",
+      "ins_claim_anomaly_score",
+      "ins_policy_tenure_days",
+      "ins_loss_ratio_exposure",
+      "ins_policy_behaviour_tier"
+    ]
+  },
+  "LENDER_C": {
+    "mean": [
+      0.45567206863679693,
+      25.309790276453768,
+      0.21459752144899905,
+      34.88237368922783,
+      1.7035271687321258
+    ],
+    "scale": [
+      0.6877580986654364,
+      12.368631583127652,
+      0.11794130859125282,
+      13.782819163333228,
+      0.7876531427504996
+    ],
+    "feature_names": [
+      "lender_loan_application_velocity",
+      "lender_repayment_stress_indicator",
+      "lender_borrowing_behaviour_deviation",
+      "lender_credit_utilization_trajectory",
+      "lender_dti_synthetic_band"
+    ]
+  }
+}

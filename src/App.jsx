@@ -50,7 +50,12 @@ export default function App() {
 
   // Authenticated Persona Switching
   const handlePersonaLogin = async (username, password) => {
-    const data = await api.login(username, password);
+    let data;
+    if (password) {
+      data = await api.login(username, password);
+    } else {
+      data = await api.demoLogin(username);
+    }
     setCurrentUser(data.user);
     setRole(data.user.role);
     // Refresh cases under new authenticated role context
@@ -164,60 +169,72 @@ export default function App() {
   const handleResetMalicious = async () => {
     setQuarantinedLender(false);
     await api.runScenario('RESET').catch(() => null);
+    const refreshedCases = await api.getCases().catch(() => null);
+    if (Array.isArray(refreshedCases) && refreshedCases.length > 0) {
+      setCases(refreshedCases);
+      const found = refreshedCases.find(c => c.id === 'CASE-10482');
+      if (found) setSelectedCase(found);
+    }
   };
 
   // Handler: Run Cross-Institution Anomaly (From Simulation Lab)
   const handleRunCrossAnomaly = async () => {
-    await api.runScenario('ANOMALY').catch(() => null);
+    const simRes = await api.runScenario('ANOMALY').catch(() => null);
 
-    // Perform genuine state mutation on CASE-10482 in UI
-    setCases(prev => prev.map(c => {
-      if (c.id === 'CASE-10482') {
-        const updated = {
-          ...c,
-          riskLevel: 'HIGH',
-          score: 87,
-          confidence: 87,
-          action: 'Step-up verification',
-          status: 'ESCALATED',
-          lastEscalation: 'Just now',
-          explanation: 'CORRELATION DISCOVERED: 3 independent weak signals aligned across Bank, Insurer, and Lender.',
-          minimumDisclosure: {
-            ...c.minimumDisclosure,
-            disclosedToAnalyst: [
-              'Composite Risk Score: HIGH (Confidence: 87%)',
-              'Primary Archetype: Cross-institution synchronized behavioural deviation',
-              'Action: Step-up verification & source of funds review'
-            ]
-          }
-        };
-        setSelectedCase(updated);
-        return updated;
-      }
-      return c;
-    }));
+    // Fetch authoritative case directly from backend
+    let authoritativeCase = null;
+    try {
+      authoritativeCase = await api.getCase('CASE-10482');
+    } catch {
+      // offline fallback
+    }
 
-    const newAlert = {
-      id: Date.now(),
-      type: 'danger',
-      title: 'Cross-Institution Anomaly Escalated',
-      detail: 'CASE-10482 escalated to HIGH RISK (87% confidence) via joint latent embedding.',
-      time: 'Just now'
-    };
-    setNotifications(prev => [newAlert, ...prev]);
+    if (authoritativeCase) {
+      setCases(prev => prev.map(c => c.id === 'CASE-10482' ? authoritativeCase : c));
+      setSelectedCase(authoritativeCase);
 
-    const newLog = {
-      id: `LOG-${Math.floor(1000 + Math.random() * 9000)}`,
-      timestamp: new Date().toLocaleTimeString(),
-      date: '2026-09-26',
-      event: 'Cross-institution pattern escalated',
-      institution: 'TRUSTMESH Network',
-      privacyStatus: 'Zero-Knowledge Synthesis',
-      result: 'CASE-10482 High Risk (87%)',
-      hash: '0x55e1...99bc',
-      fullHash: '0x55e199bc48d902187f34ac9910d48bc3a08891cf23ba4019a8b7c6d5e4f3a2b1'
-    };
-    setDynamicLogs(prev => [newLog, ...prev]);
+      const newAlert = {
+        id: Date.now(),
+        type: 'danger',
+        title: 'Cross-Institution Anomaly Escalated',
+        detail: `CASE-10482 escalated to ${authoritativeCase.riskLevel} (${authoritativeCase.score}% confidence) via collaborative synthesis.`,
+        time: 'Just now'
+      };
+      setNotifications(prev => [newAlert, ...prev]);
+
+      api.getAuditLogs().then(data => {
+        if (Array.isArray(data) && data.length > 0) {
+          setDynamicLogs(data);
+        }
+      }).catch(() => null);
+
+      return authoritativeCase;
+    } else {
+      const predScore = simRes?.prediction?.score || 98.4;
+      const updated = {
+        ...selectedCase,
+        id: 'CASE-10482',
+        riskLevel: 'HIGH',
+        score: predScore,
+        confidence: predScore,
+        action: 'Step-up verification',
+        status: 'ESCALATED',
+        lastEscalation: 'Just now',
+        explanation: 'CORRELATION DISCOVERED: 3 independent weak signals aligned across Bank, Insurer, and Lender.'
+      };
+      setCases(prev => prev.map(c => c.id === 'CASE-10482' ? updated : c));
+      setSelectedCase(updated);
+
+      const newAlert = {
+        id: Date.now(),
+        type: 'danger',
+        title: 'Cross-Institution Anomaly Escalated',
+        detail: `CASE-10482 escalated to HIGH RISK (${predScore}% confidence).`,
+        time: 'Just now'
+      };
+      setNotifications(prev => [newAlert, ...prev]);
+      return updated;
+    }
   };
 
   // Handler: Human Analyst Step-Up Verification

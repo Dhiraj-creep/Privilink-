@@ -52,11 +52,29 @@ class AuditChain:
                     hash TEXT NOT NULL
                 )
             """)
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS audit_events_sandbox (
+                    idx INTEGER PRIMARY KEY,
+                    event_id TEXT NOT NULL,
+                    timestamp TEXT NOT NULL,
+                    actor TEXT NOT NULL,
+                    role TEXT NOT NULL,
+                    action TEXT NOT NULL,
+                    target_id TEXT NOT NULL,
+                    details TEXT NOT NULL,
+                    institution TEXT NOT NULL,
+                    privacy_status TEXT NOT NULL,
+                    result TEXT NOT NULL,
+                    prev_hash TEXT NOT NULL,
+                    hash TEXT NOT NULL
+                )
+            """)
             conn.commit()
 
         # Ensure genesis event exists
         if self.get_count() == 0:
             self._create_genesis()
+        self.init_sandbox()
 
     def _create_genesis(self) -> None:
         genesis_payload = {
@@ -254,11 +272,128 @@ class AuditChain:
             "message": "All cryptographic links and SHA-256 signatures verified successfully"
         }
 
-    def simulate_tamper(self, target_idx: int = 1) -> Dict[str, Any]:
+    def init_sandbox(self) -> None:
+        """Clones up to 10 operational events into the disposable sandbox table."""
+        with self._get_connection() as conn:
+            conn.execute("DELETE FROM audit_events_sandbox")
+            events = conn.execute("SELECT * FROM audit_events ORDER BY idx ASC LIMIT 10").fetchall()
+            for evt in events:
+                conn.execute("""
+                    INSERT INTO audit_events_sandbox (
+                        idx, event_id, timestamp, actor, role, action, target_id,
+                        details, institution, privacy_status, result, prev_hash, hash
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    evt["idx"], evt["event_id"], evt["timestamp"], evt["actor"],
+                    evt["role"], evt["action"], evt["target_id"], evt["details"],
+                    evt["institution"], evt["privacy_status"], evt["result"],
+                    evt["prev_hash"], evt["hash"]
+                ))
+            conn.commit()
+
+    def get_sandbox_events(self) -> List[Dict[str, Any]]:
+        with self._get_connection() as conn:
+            cursor = conn.execute("SELECT * FROM audit_events_sandbox ORDER BY idx ASC")
+            return [dict(row) for row in cursor.fetchall()]
+
+    def simulate_sandbox_tamper(self, target_idx: int = 1) -> Dict[str, Any]:
         """
-        Demonstrates tamper-evidence by altering a record directly in the DB.
-        Subsequent chain verification will immediately flag the alteration.
+        Modifies a block in the DISPOSABLE sandbox ledger without corrupting operational records.
         """
+        with self._get_connection() as conn:
+            cursor = conn.execute("SELECT * FROM audit_events_sandbox WHERE idx = ?", (target_idx,))
+            row = cursor.fetchone()
+            if not row:
+                self.init_sandbox()
+                cursor = conn.execute("SELECT * FROM audit_events_sandbox WHERE idx = ?", (target_idx,))
+                row = cursor.fetchone()
+
+            if not row:
+                return {"success": False, "error": f"Sandbox event at index {target_idx} not found"}
+
+            original_details = row["details"]
+            tampered_details = original_details + " [UNAUTHORIZED DISPOSABLE INJECTION]"
+
+            conn.execute(
+                "UPDATE audit_events_sandbox SET details = ? WHERE idx = ?",
+                (tampered_details, target_idx)
+            )
+            conn.commit()
+
+        return {
+            "success": True,
+            "target": "sandbox",
+            "tampered_index": target_idx,
+            "original_details": original_details,
+            "tampered_details": tampered_details,
+            "warning": "Disposable sandbox block modified; operational audit chain remains cryptographically intact."
+        }
+
+    def verify_sandbox(self) -> Dict[str, Any]:
+        """Verifies the disposable sandbox ledger and reports tampering."""
+        events = self.get_sandbox_events()
+        if not events:
+            return {"valid": False, "error": "Sandbox ledger is empty", "total_events": 0}
+
+        expected_prev_hash = self.GENESIS_PREV_HASH
+        for i, evt in enumerate(events):
+            if evt["prev_hash"] != expected_prev_hash:
+                return {
+                    "valid": False,
+                    "target": "sandbox",
+                    "total_events": len(events),
+                    "broken_index": i,
+                    "error": f"Chain link severed at index {i}: prev_hash does not match previous block hash."
+                }
+
+            payload_to_verify = {
+                "idx": evt["idx"],
+                "event_id": evt["event_id"],
+                "timestamp": evt["timestamp"],
+                "actor": evt["actor"],
+                "role": evt["role"],
+                "action": evt["action"],
+                "target_id": evt["target_id"],
+                "details": evt["details"],
+                "institution": evt["institution"],
+                "privacy_status": evt["privacy_status"],
+                "result": evt["result"],
+                "prev_hash": evt["prev_hash"],
+            }
+            computed_hash = compute_sha256(canonical_serialize(payload_to_verify))
+            if computed_hash != evt["hash"]:
+                return {
+                    "valid": False,
+                    "target": "sandbox",
+                    "total_events": len(events),
+                    "broken_index": i,
+                    "error": (
+                        f"Cryptographic tampering detected at index {i} (Event {evt['event_id']}): "
+                        f"Stored hash '{evt['hash'][:16]}...' does not match recomputed '{computed_hash[:16]}...'"
+                    )
+                }
+            expected_prev_hash = evt["hash"]
+
+        return {
+            "valid": True,
+            "target": "sandbox",
+            "total_events": len(events),
+            "latest_hash": events[-1]["hash"],
+            "message": "All sandbox blocks and hashes verified successfully."
+        }
+
+    def reset_sandbox(self) -> Dict[str, Any]:
+        """Resets the disposable sandbox back to operational state."""
+        self.init_sandbox()
+        return {"success": True, "message": "Sandbox audit ledger reset to operational snapshot."}
+
+    def simulate_tamper(self, target_idx: int = 1, use_sandbox: bool = False) -> Dict[str, Any]:
+        """
+        Demonstrates tamper-evidence. If use_sandbox=True, modifies sandbox ledger; otherwise operational ledger.
+        """
+        if use_sandbox:
+            return self.simulate_sandbox_tamper(target_idx)
+
         with self._get_connection() as conn:
             cursor = conn.execute("SELECT * FROM audit_events WHERE idx = ?", (target_idx,))
             row = cursor.fetchone()

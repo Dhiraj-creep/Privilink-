@@ -16,6 +16,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from backend.config import BANK_A_PORT, INSURER_B_PORT, LENDER_C_PORT
 from backend.auth.security import verify_session_token, verify_institution_boundary_access
+from backend.models.schemas import ComputePartialLogitRequest
 from backend.nodes.bank_node import BankNodeService
 from backend.nodes.insurer_node import InsurerNodeService
 from backend.nodes.lender_node import LenderNodeService
@@ -71,6 +72,22 @@ def create_node_app(node_name: str, node_service) -> FastAPI:
             "isolation": "Sovereign local SQLite database mounted",
             "db_path": str(node_service.db_path)
         }
+
+    @app.post("/compute-partial-logit")
+    def compute_partial_logit_endpoint(req: ComputePartialLogitRequest):
+        """
+        Computes sovereign partial logit z_k = X_k * W_k for Split Learning.
+        Private customer features NEVER leave this node.
+        """
+        try:
+            return node_service.compute_partial_logit(
+                entity_ref=req.entity_ref,
+                raw_features=req.raw_features
+            )
+        except ValueError as e:
+            raise HTTPException(status_code=404, detail=str(e))
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
 
     return app
 

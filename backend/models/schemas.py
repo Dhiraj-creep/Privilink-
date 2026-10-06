@@ -63,3 +63,12 @@ class SimulationScenarioRequest(BaseModel):
 
 class AuditTamperRequest(BaseModel):
     target_idx: int = 1
+
+
+class DemoLoginRequest(BaseModel):
+    username: str
+
+
+class ComputePartialLogitRequest(BaseModel):
+    entity_ref: str
+    raw_features: Optional[Dict[str, Any]] = None

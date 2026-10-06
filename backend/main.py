@@ -28,6 +28,7 @@ from backend.crypto.secagg import CentralSecAggCoordinator, ParticipantNodeSecAg
 from backend.models.schemas import (
     AuditTamperRequest,
     CaseActionRequest,
+    DemoLoginRequest,
     DPSimulateRequest,
     LoginRequest,
     LoginResponse,
@@ -102,6 +103,39 @@ def login(req: LoginRequest):
 
     if not verify_password(req.password, user["password_hash"]):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid username or password")
+
+    token = create_session_token(user)
+    return {
+        "token": token,
+        "user": {
+            "id": user["id"],
+            "username": user["username"],
+            "email": user["email"],
+            "role": user["role"],
+            "institution_id": user.get("institution_id"),
+            "title": user.get("title", user["role"]),
+            "desc": user.get("desc", "")
+        }
+    }
+
+
+@app.post("/api/auth/demo-login")
+def demo_login(req: DemoLoginRequest):
+    """
+    Evaluator demo persona switcher.
+    Active only when ALLOW_DEMO_SHORTCUTS is True.
+    Allows testing RBAC persona switching without embedding plain passwords into client bundles.
+    """
+    from backend.config import ALLOW_DEMO_SHORTCUTS
+    if not ALLOW_DEMO_SHORTCUTS:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Demo login shortcuts are disabled in this environment. Please authenticate via /api/auth/login with valid credentials."
+        )
+
+    user = get_user_by_username(req.username)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"User '{req.username}' not found.")
 
     token = create_session_token(user)
     return {
@@ -436,6 +470,46 @@ def simulate_audit_tamper(
             detail=f"Forbidden: Role '{user['role']}' cannot run audit tamper tests. Restricted to Compliance Officer and Network Admin."
         )
     return audit_chain.simulate_tamper(target_idx=req.target_idx)
+
+
+@app.get("/api/audit/sandbox/logs")
+def get_sandbox_audit_logs():
+    """Returns the disposable sandbox ledger snapshot."""
+    return audit_chain.get_sandbox_events()
+
+
+@app.get("/api/audit/sandbox/verify")
+def verify_sandbox_audit_ledger():
+    """Validates every link in the disposable sandbox hash chain."""
+    return audit_chain.verify_sandbox()
+
+
+@app.post("/api/audit/sandbox/tamper")
+def simulate_sandbox_audit_tamper(
+    req: AuditTamperRequest,
+    user: Dict[str, Any] = Depends(get_current_user)
+):
+    """
+    Modifies a block in the DISPOSABLE sandbox ledger to demonstrate tamper detection.
+    The real operational audit log is permanently shielded.
+    """
+    if user["role"] not in ("COMPLIANCE_OFFICER", "NETWORK_ADMIN"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Forbidden: Role '{user['role']}' cannot run audit tamper tests. Restricted to Compliance Officer and Network Admin."
+        )
+    return audit_chain.simulate_sandbox_tamper(target_idx=req.target_idx)
+
+
+@app.post("/api/audit/sandbox/reset")
+def reset_sandbox_audit_ledger(user: Dict[str, Any] = Depends(get_current_user)):
+    """Restores the sandbox ledger back to an exact snapshot of operational history."""
+    if user["role"] not in ("COMPLIANCE_OFFICER", "NETWORK_ADMIN"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Forbidden: Role '{user['role']}' cannot reset the audit sandbox. Restricted to Compliance Officer and Network Admin."
+        )
+    return audit_chain.reset_sandbox()
 
 
 @app.get("/api/health")

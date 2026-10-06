@@ -29,7 +29,6 @@ export default function Navbar({
     {
       id: 'RISK_ANALYST',
       username: 'analyst',
-      password: 'Analyst2026!',
       title: 'Risk Analyst',
       subtitle: 'Cross-institution case investigations & explainability HUD',
       scope: 'Global Read / Step-Up KYC Dispatch',
@@ -39,7 +38,6 @@ export default function Navbar({
       id: 'INSTITUTION_ADMIN_BANK',
       role: 'INSTITUTION_ADMIN',
       username: 'bank_admin',
-      password: 'BankAdmin2026!',
       institutionId: 'BANK_A',
       title: 'Institution Admin (Bank A)',
       subtitle: 'Local private schema & sovereign Bank A records only',
@@ -50,7 +48,6 @@ export default function Navbar({
       id: 'INSTITUTION_ADMIN_INSURER',
       role: 'INSTITUTION_ADMIN',
       username: 'insurer_admin',
-      password: 'InsurerAdmin2026!',
       institutionId: 'INSURER_B',
       title: 'Institution Admin (Insurer B)',
       subtitle: 'Local private schema & sovereign Insurer B policies only',
@@ -61,7 +58,6 @@ export default function Navbar({
       id: 'INSTITUTION_ADMIN_LENDER',
       role: 'INSTITUTION_ADMIN',
       username: 'lender_admin',
-      password: 'LenderAdmin2026!',
       institutionId: 'LENDER_C',
       title: 'Institution Admin (Lender C)',
       subtitle: 'Local private schema & sovereign Lender C credit facilities',
@@ -72,7 +68,6 @@ export default function Navbar({
       id: 'COMPLIANCE_OFFICER',
       role: 'COMPLIANCE_OFFICER',
       username: 'compliance',
-      password: 'Compliance2026!',
       title: 'Compliance Officer',
       subtitle: 'Privacy budget ε, audit ledger verification & case resolution',
       scope: 'Full Compliance Clearance & Case Resolution',
@@ -82,7 +77,6 @@ export default function Navbar({
       id: 'NETWORK_ADMIN',
       role: 'NETWORK_ADMIN',
       username: 'admin',
-      password: 'NetworkAdmin2026!',
       title: 'Network Admin',
       subtitle: 'Global topology, Byzantine defense & aggregation rounds',
       scope: 'Full Administrative Clearance & Byzantine Quarantine',
@@ -100,7 +94,7 @@ export default function Navbar({
     setAuthError(null);
     try {
       if (onPersonaLogin) {
-        await onPersonaLogin(persona.username, persona.password);
+        await onPersonaLogin(persona.username);
       }
       setShowRoleMenu(false);
     } catch (err) {

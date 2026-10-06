@@ -60,6 +60,15 @@ class ApiClient {
     return data;
   }
 
+  async demoLogin(username) {
+    const data = await this.request('/auth/demo-login', {
+      method: 'POST',
+      body: JSON.stringify({ username })
+    });
+    this.setSession(data.token, data.user);
+    return data;
+  }
+
   logout() {
     this.setSession(null, null);
   }
@@ -75,9 +84,9 @@ class ApiClient {
   async autoLoginDefault() {
     if (!this.token) {
       try {
-        return await this.login('analyst', 'Analyst2026!');
+        return await this.demoLogin('analyst');
       } catch (e) {
-        console.warn('Initial authentication failed (backend may be starting)', e);
+        console.warn('Initial demo authentication failed (backend may be starting)', e);
         return null;
       }
     }
@@ -175,6 +184,29 @@ class ApiClient {
     return this.request('/audit/simulate-tamper', {
       method: 'POST',
       body: JSON.stringify({ target_idx: targetIdx })
+    });
+  }
+
+  // Disposable Audit Sandbox
+  async getSandboxLogs() {
+    return this.request('/audit/sandbox/logs');
+  }
+
+  async verifySandboxAudit() {
+    return this.request('/audit/sandbox/verify');
+  }
+
+  async simulateSandboxTamper(targetIdx = 1) {
+    return this.request('/audit/sandbox/tamper', {
+      method: 'POST',
+      body: JSON.stringify({ target_idx: targetIdx })
+    });
+  }
+
+  async resetSandboxAudit() {
+    return this.request('/audit/sandbox/reset', {
+      method: 'POST',
+      body: JSON.stringify({})
     });
   }
 
