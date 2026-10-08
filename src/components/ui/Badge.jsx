@@ -2,54 +2,74 @@ import React from 'react';
 
 const VARIANT_STYLES = {
   primary: {
-    bg: 'var(--primary-subtle)',
-    color: 'var(--primary-hover)',
-    border: 'var(--primary-border)'
+    bg: '#EEF2FF',
+    color: '#3730A3',
+    border: '#C7D2FE'
+  },
+  indigo: {
+    bg: '#EEF2FF',
+    color: '#3730A3',
+    border: '#C7D2FE'
+  },
+  teal: {
+    bg: '#F0FDFA',
+    color: '#115E59',
+    border: '#99F6E4'
   },
   cyan: {
-    bg: 'var(--accent-cyan-subtle)',
-    color: 'var(--accent-cyan)',
-    border: 'var(--accent-cyan-border)'
+    bg: '#F0FDFA',
+    color: '#115E59',
+    border: '#99F6E4'
+  },
+  violet: {
+    bg: '#F5F3FF',
+    color: '#5B21B6',
+    border: '#DDD6FE'
   },
   success: {
-    bg: 'var(--success-subtle)',
-    color: 'var(--success)',
-    border: 'var(--success-border)'
+    bg: '#F0FDF4',
+    color: '#14532D',
+    border: '#BBF7D0'
   },
   warning: {
-    bg: 'var(--warning-subtle)',
-    color: 'var(--warning)',
-    border: 'var(--warning-border)'
+    bg: '#FFFBEB',
+    color: '#78350F',
+    border: '#FDE68A'
   },
   danger: {
-    bg: 'var(--danger-subtle)',
-    color: 'var(--danger)',
-    border: 'var(--danger-border)'
+    bg: '#FEF2F2',
+    color: '#7F1D1D',
+    border: '#FECACA'
   },
   neutral: {
-    bg: 'rgba(102, 116, 143, 0.12)',
-    color: 'var(--text-secondary)',
-    border: 'var(--border-default)'
+    bg: '#F1F5F9',
+    color: '#334155',
+    border: '#CBD5E1'
+  },
+  demo: {
+    bg: '#F8FAFC',
+    color: '#64748B',
+    border: '#E2E8F0'
   },
   'risk-low': {
-    bg: 'rgba(34, 197, 94, 0.12)',
-    color: 'var(--risk-low)',
-    border: 'rgba(34, 197, 94, 0.3)'
+    bg: '#F0FDF4',
+    color: '#14532D',
+    border: '#BBF7D0'
   },
   'risk-medium': {
-    bg: 'rgba(245, 158, 11, 0.12)',
-    color: 'var(--risk-medium)',
-    border: 'rgba(245, 158, 11, 0.3)'
+    bg: '#FFFBEB',
+    color: '#78350F',
+    border: '#FDE68A'
   },
   'risk-high': {
-    bg: 'rgba(249, 115, 22, 0.12)',
-    color: 'var(--risk-high)',
-    border: 'rgba(249, 115, 22, 0.3)'
+    bg: '#FEF2F2',
+    color: '#7F1D1D',
+    border: '#FECACA'
   },
   'risk-critical': {
-    bg: 'rgba(239, 68, 68, 0.12)',
-    color: 'var(--risk-critical)',
-    border: 'rgba(239, 68, 68, 0.3)'
+    bg: '#FEF2F2',
+    color: '#7F1D1D',
+    border: '#FECACA'
   }
 };
 
@@ -72,8 +92,8 @@ export function Badge({
         display: 'inline-flex',
         alignItems: 'center',
         gap: '4px',
-        padding: isSm ? '1.5px 6px' : '2.5px 8px',
-        fontSize: isSm ? 'var(--text-xs)' : 'var(--text-sm)',
+        padding: isSm ? '2px 6px' : '3px 8px',
+        fontSize: isSm ? '11px' : '12px',
         fontWeight: 600,
         lineHeight: 1.25,
         borderRadius: 'var(--radius-xs)',
@@ -83,6 +103,7 @@ export function Badge({
         letterSpacing: '0.03em',
         textTransform: 'uppercase',
         fontVariantNumeric: 'tabular-nums',
+        fontFamily: 'var(--font-sans)',
         whiteSpace: 'nowrap',
         ...style
       }}

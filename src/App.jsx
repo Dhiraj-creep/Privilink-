@@ -3,20 +3,17 @@ import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
 import HackathonTourModal from './components/HackathonTourModal';
 import { TOUR_STEPS } from './data/tourSteps';
+import './App.css';
 
-// Views
+// Direct View Imports for instantaneous, reliable rendering across dev and prod
 import LandingPageView from './views/LandingPageView';
 import OverviewView from './views/OverviewView';
-import InstitutionNetworkView from './views/InstitutionNetworkView';
 import CollaborativeRiskView from './views/CollaborativeRiskView';
 import CustomerInvestigationView from './views/CustomerInvestigationView';
-import PrivacyCenterView from './views/PrivacyCenterView';
-import SecureAggregationLabView from './views/SecureAggregationLabView';
-import TrustSecurityView from './views/TrustSecurityView';
-import ModelCollaborationView from './views/ModelCollaborationView';
-import EntityResolutionView from './views/EntityResolutionView';
-import SimulationLabView from './views/SimulationLabView';
+import InstitutionNetworkView from './views/InstitutionNetworkView';
+import SecurityPrivacyView from './views/SecurityPrivacyView';
 import AuditTrailView from './views/AuditTrailView';
+import AdvancedDemoView from './views/AdvancedDemoView';
 import ArchitectureScopeView from './views/ArchitectureScopeView';
 import ErrorBoundary from './components/ErrorBoundary';
 
@@ -28,6 +25,7 @@ export default function App() {
   const [currentTab, setCurrentTab] = useState('overview');
   const [currentUser, setCurrentUser] = useState(api.getCurrentUser() || null);
   const [currentRole, setRole] = useState(api.getCurrentUser()?.role || 'RISK_ANALYST');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
   // Interactive Simulation States
   const [quarantinedLender, setQuarantinedLender] = useState(false);
@@ -35,19 +33,60 @@ export default function App() {
   const [cases, setCases] = useState(RISK_CASES);
   const [selectedCase, setSelectedCase] = useState(RISK_CASES[0]);
   const [backendConnected, setBackendConnected] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
-  // Hackathon Demo Tour State (10 steps)
+  // Guided Tour State
   const [showTour, setShowTour] = useState(false);
   const [tourStepIndex, setTourStepIndex] = useState(0);
 
   // Dynamic Notifications & Audits
   const [notifications, setNotifications] = useState([
     { id: 1, type: 'warning', title: 'Cross-Institution Anomaly', detail: 'Case CASE-10482 candidate: weak signals converging.', time: '3m ago' },
-    { id: 2, type: 'info', title: 'Round 27 Finalized', detail: 'Zero-knowledge secure aggregation completed successfully.', time: '14m ago' },
+    { id: 2, type: 'info', title: 'Round 27 Finalized', detail: 'Zero-sum secure aggregation completed successfully (Σ M_i = 0).', time: '14m ago' },
     { id: 3, type: 'info', title: 'Privacy Budget Status', detail: 'Differential privacy ε=1.5 within target bounds.', time: '28m ago' }
   ]);
 
   const [dynamicLogs, setDynamicLogs] = useState([]);
+
+  // URL Hash Navigation Helper
+  const navigateToTab = (tab, caseId = null) => {
+    setCurrentTab(tab);
+    setMobileMenuOpen(false);
+    if (tab === 'customer_investigation' && (caseId || selectedCase?.id)) {
+      window.location.hash = `#/investigation/${caseId || selectedCase?.id}`;
+    } else {
+      window.location.hash = `#/${tab}`;
+    }
+  };
+
+  // URL Hash Listener: Supports direct links, page refresh, and back/forward navigation
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace(/^#\/?/, '');
+      if (!hash) return;
+      if (hash.startsWith('investigation/')) {
+        const targetId = hash.split('/')[1];
+        if (targetId) {
+          setCurrentTab('customer_investigation');
+          api.getCase(targetId)
+            .then(c => { if (c) setSelectedCase(c); })
+            .catch(() => null);
+        }
+      } else {
+        const validTabs = [
+          'overview', 'risk_cases', 'institutions', 'security_privacy',
+          'audit_trail', 'advanced_demo', 'architecture_scope'
+        ];
+        if (validTabs.includes(hash)) {
+          setCurrentTab(hash);
+        }
+      }
+    };
+
+    handleHashChange();
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
 
   // Authenticated Persona Switching
   const handlePersonaLogin = async (username, password) => {
@@ -59,13 +98,19 @@ export default function App() {
     }
     setCurrentUser(data.user);
     setRole(data.user.role);
-    // Refresh cases under new authenticated role context
+
+    // Refresh cases and authoritative active case under new authenticated role context
     const casesData = await api.getCases().catch(() => null);
-    if (Array.isArray(casesData) && casesData.length > 0) {
+    if (Array.isArray(casesData)) {
       setCases(casesData);
-      if (selectedCase) {
-        const found = casesData.find(c => c.id === selectedCase.id);
-        if (found) setSelectedCase(found);
+      if (selectedCase?.id && casesData.length > 0) {
+        try {
+          const fresh = await api.getCase(selectedCase.id);
+          if (fresh) setSelectedCase(fresh);
+        } catch {
+          const found = casesData.find(c => c.id === selectedCase.id);
+          if (found) setSelectedCase(found);
+        }
       }
     }
     return data;
@@ -75,6 +120,9 @@ export default function App() {
     api.logout();
     setCurrentUser(null);
     setRole('ANONYMOUS');
+    setSelectedCase(null);
+    setDynamicLogs([]);
+    navigateToTab('overview');
   };
 
   // Fetch initial state from backend if running
@@ -82,8 +130,8 @@ export default function App() {
     api.healthCheck()
       .then(async () => {
         setBackendConnected(true);
-        // Ensure default authenticated session if none exists
-        if (!api.getToken()) {
+        // Ensure default authenticated session if none exists and user has not explicitly logged out
+        if (!api.getToken() && localStorage.getItem('trustmesh_logged_out') !== 'true') {
           const authRes = await api.autoLoginDefault().catch(() => null);
           if (authRes && authRes.user) {
             setCurrentUser(authRes.user);
@@ -95,11 +143,18 @@ export default function App() {
           api.getSimulationState().catch(() => null)
         ]);
       })
-      .then(([casesData, simState]) => {
-        if (Array.isArray(casesData) && casesData.length > 0) {
+      .then(async ([casesData, simState]) => {
+        if (Array.isArray(casesData)) {
           setCases(casesData);
-          const found10482 = casesData.find(c => c.id === 'CASE-10482');
-          setSelectedCase(found10482 || casesData[0]);
+          if (casesData.length > 0) {
+            const initialTarget = casesData.find(c => c.id === 'CASE-10482') || casesData[0];
+            try {
+              const authoritative = await api.getCase(initialTarget.id);
+              setSelectedCase(authoritative || initialTarget);
+            } catch {
+              setSelectedCase(initialTarget);
+            }
+          }
         }
         if (simState) {
           setQuarantinedLender(!!simState.quarantined_lender);
@@ -110,146 +165,150 @@ export default function App() {
       });
   }, []);
 
-  // Handler: Select case & navigate
-  const handleSelectCase = (caseObj) => {
+  // Handler: Select case & navigate with authoritative details
+  const handleSelectCase = async (caseObj) => {
+    navigateToTab('customer_investigation', caseObj.id);
+    try {
+      const detailed = await api.getCase(caseObj.id);
+      if (detailed) {
+        setSelectedCase(detailed);
+        return;
+      }
+    } catch {
+      // fallback to list object
+    }
     setSelectedCase(caseObj);
-    setCurrentTab('customer_investigation');
   };
 
-  // Handler: Open specific case by ID (solves Simulation Lab navigation bug)
+  // Handler: Open specific case by ID
   const handleOpenCaseById = async (caseId) => {
-    let target = cases.find(c => c.id === caseId);
-    if (!target) {
-      try {
-        target = await api.getCase(caseId);
-      } catch {
-        // fallback
+    navigateToTab('customer_investigation', caseId);
+    try {
+      const detailed = await api.getCase(caseId);
+      if (detailed) {
+        setSelectedCase(detailed);
+        return;
       }
+    } catch {
+      // fallback
     }
+    const target = cases.find(c => c.id === caseId);
     if (target) {
       setSelectedCase(target);
     }
-    setCurrentTab('customer_investigation');
-  };
-
-  // Handler: Select institution & navigate
-  const handleSelectInstitution = (instId) => {
-    setSelectedInstitutionId(instId);
-    setCurrentTab('institutions');
   };
 
   // Handler: Trigger Byzantine Malicious Participant Simulation
   const handleTriggerMalicious = async () => {
-    setQuarantinedLender(true);
-    await api.runScenario('MALICIOUS').catch(() => null);
-
-    const newAlert = {
-      id: Date.now(),
-      type: 'danger',
-      title: 'Participant Update Flagged',
-      detail: 'Lender C submitted anomalous update. Weight quarantined & trust score reduced to 63%.',
-      time: 'Just now'
-    };
-    setNotifications(prev => [newAlert, ...prev]);
-
-    const newLog = {
-      id: `LOG-${Math.floor(1000 + Math.random() * 9000)}`,
-      timestamp: new Date().toLocaleTimeString(),
-      date: '2026-09-26',
-      event: 'Participant anomaly detected & isolated',
-      institution: 'LENDER C',
-      privacyStatus: 'Byzantine Filtering Active',
-      result: 'Quarantined (Norm: 14.8 > 1.0)',
-      hash: '0x3c99...e28b',
-      fullHash: '0x3c99e28b172a8091bc22718910bcda4921ef583091c78103bb29df4021008877'
-    };
-    setDynamicLogs(prev => [newLog, ...prev]);
-  };
-
-  // Handler: Reset Byzantine Malicious Simulation
-  const handleResetMalicious = async () => {
-    setQuarantinedLender(false);
-    await api.runScenario('RESET').catch(() => null);
-    const refreshedCases = await api.getCases().catch(() => null);
-    if (Array.isArray(refreshedCases) && refreshedCases.length > 0) {
-      setCases(refreshedCases);
-      const found = refreshedCases.find(c => c.id === 'CASE-10482');
-      if (found) setSelectedCase(found);
-    }
-  };
-
-  // Handler: Run Cross-Institution Anomaly (From Simulation Lab)
-  const handleRunCrossAnomaly = async () => {
-    const simRes = await api.runScenario('ANOMALY').catch(() => null);
-
-    // Fetch authoritative case directly from backend
-    let authoritativeCase = null;
     try {
-      authoritativeCase = await api.getCase('CASE-10482');
-    } catch {
-      // offline fallback
-    }
-
-    if (authoritativeCase) {
-      setCases(prev => prev.map(c => c.id === 'CASE-10482' ? authoritativeCase : c));
-      setSelectedCase(authoritativeCase);
+      const res = await api.runScenario('MALICIOUS');
+      setQuarantinedLender(true);
 
       const newAlert = {
         id: Date.now(),
         type: 'danger',
-        title: 'Cross-Institution Anomaly Escalated',
-        detail: `CASE-10482 escalated to ${authoritativeCase.riskLevel} (${authoritativeCase.score}% confidence) via collaborative synthesis.`,
+        title: 'Participant Update Flagged & Quarantined',
+        detail: 'Lender C submitted anomalous gradient (Norm: 14.8 > 1.0). Weight quarantined via Byzantine defense.',
         time: 'Just now'
       };
       setNotifications(prev => [newAlert, ...prev]);
 
       api.getAuditLogs().then(data => {
-        if (Array.isArray(data) && data.length > 0) {
-          setDynamicLogs(data);
-        }
+        if (Array.isArray(data) && data.length > 0) setDynamicLogs(data);
       }).catch(() => null);
 
-      return authoritativeCase;
-    } else {
-      const predScore = simRes?.prediction?.score || 98.4;
-      const updated = {
-        ...selectedCase,
-        id: 'CASE-10482',
-        riskLevel: 'HIGH',
-        score: predScore,
-        confidence: predScore,
-        action: 'Step-up verification',
-        status: 'ESCALATED',
-        lastEscalation: 'Just now',
-        explanation: 'CORRELATION DISCOVERED: 3 independent weak signals aligned across Bank, Insurer, and Lender.'
-      };
-      setCases(prev => prev.map(c => c.id === 'CASE-10482' ? updated : c));
-      setSelectedCase(updated);
-
-      const newAlert = {
+      return res;
+    } catch (err) {
+      console.error('Byzantine simulation failed on backend', err);
+      const errAlert = {
         id: Date.now(),
-        type: 'danger',
-        title: 'Cross-Institution Anomaly Escalated',
-        detail: `CASE-10482 escalated to HIGH RISK (${predScore}% confidence).`,
+        type: 'warning',
+        title: 'Simulation Command Failed',
+        detail: `Backend could not execute scenario: ${err.message || 'Coordinator unreachable'}.`,
         time: 'Just now'
       };
-      setNotifications(prev => [newAlert, ...prev]);
-      return updated;
+      setNotifications(prev => [errAlert, ...prev]);
+      throw err;
+    }
+  };
+
+  // Handler: Reset Byzantine Malicious Simulation
+  const handleResetMalicious = async () => {
+    try {
+      await api.runScenario('RESET');
+      setQuarantinedLender(false);
+      const refreshedCases = await api.getCases().catch(() => null);
+      if (Array.isArray(refreshedCases) && refreshedCases.length > 0) {
+        setCases(refreshedCases);
+        const found = refreshedCases.find(c => c.id === 'CASE-10482');
+        if (found) setSelectedCase(found);
+      }
+    } catch (err) {
+      console.error('Reset simulation failed on backend', err);
+      throw err;
+    }
+  };
+
+  // Handler: Run Cross-Institution Anomaly (From Simulation Lab)
+  const handleRunCrossAnomaly = async () => {
+    try {
+      await api.runScenario('ANOMALY');
+      const authoritativeCase = await api.getCase('CASE-10482');
+
+      if (authoritativeCase) {
+        setCases(prev => prev.map(c => c.id === 'CASE-10482' ? authoritativeCase : c));
+        setSelectedCase(authoritativeCase);
+
+        const newAlert = {
+          id: Date.now(),
+          type: 'danger',
+          title: 'Cross-Institution Anomaly Escalated',
+          detail: `CASE-10482 escalated to ${authoritativeCase.riskLevel} (Risk Score: ${authoritativeCase.score}%, Confidence: ${authoritativeCase.confidence}%) via collaborative Split Learning.`,
+          time: 'Just now'
+        };
+        setNotifications(prev => [newAlert, ...prev]);
+
+        api.getAuditLogs().then(data => {
+          if (Array.isArray(data) && data.length > 0) {
+            setDynamicLogs(data);
+          }
+        }).catch(() => null);
+
+        return authoritativeCase;
+      }
+      return null;
+    } catch (err) {
+      console.error('Anomaly simulation failed', err);
+      const errAlert = {
+        id: Date.now(),
+        type: 'warning',
+        title: 'Simulation Error',
+        detail: `Could not trigger cross-institution anomaly: ${err.message || 'Backend disconnected'}. Real backend connection required.`,
+        time: 'Just now'
+      };
+      setNotifications(prev => [errAlert, ...prev]);
+      throw err;
     }
   };
 
   // Handler: Human Analyst Step-Up Verification
   const handleTriggerVerification = async (caseId) => {
     const res = await api.triggerStepUpVerification(caseId, currentRole, currentRole);
+    // Refresh authoritative case directly from backend
+    try {
+      const detailed = await api.getCase(caseId);
+      if (detailed) setSelectedCase(detailed);
+    } catch {
+      // fallback
+    }
     setCases(prev => prev.map(c => {
       if (c.id === caseId) {
-        const updated = { 
+        return { 
           ...c, 
           status: 'VERIFICATION_REQUESTED',
-          activeTaskId: res.task_id 
+          activeTaskId: res.task_id,
+          hasActiveTask: true
         };
-        if (selectedCase?.id === caseId) setSelectedCase(updated);
-        return updated;
       }
       return c;
     }));
@@ -266,19 +325,36 @@ export default function App() {
 
   // Handler: Compliance Case Resolution
   const handleResolveVerification = async (caseId, notes) => {
-    const targetCase = cases.find(c => c.id === caseId) || selectedCase;
-    const taskId = targetCase?.activeTaskId;
+    let targetCase = selectedCase?.id === caseId ? selectedCase : cases.find(c => c.id === caseId);
+    let taskId = targetCase?.activeTaskId;
     if (!taskId) {
-      throw new Error(`No active verification task ID found for case ${caseId}. Please trigger verification first.`);
+      try {
+        const fresh = await api.getCase(caseId);
+        if (fresh) {
+          targetCase = fresh;
+          taskId = fresh.activeTaskId;
+          setSelectedCase(fresh);
+        }
+      } catch {
+        // fallback
+      }
     }
 
-    await api.resolveCase(caseId, taskId, notes, currentRole, currentRole);
+    const res = await api.resolveCase(caseId, taskId, notes, currentRole, currentRole);
+
+    // Refresh authoritative case directly from backend
+    try {
+      const freshCase = await api.getCase(caseId);
+      if (freshCase) {
+        setSelectedCase(freshCase);
+      }
+    } catch {
+      setSelectedCase(prev => prev ? { ...prev, status: 'RESOLVED', activeTaskId: null, hasActiveTask: false } : null);
+    }
 
     setCases(prev => prev.map(c => {
       if (c.id === caseId) {
-        const updated = { ...c, status: 'RESOLVED', activeTaskId: null };
-        if (selectedCase?.id === caseId) setSelectedCase(updated);
-        return updated;
+        return { ...c, status: 'RESOLVED', activeTaskId: null, hasActiveTask: false };
       }
       return c;
     }));
@@ -291,6 +367,7 @@ export default function App() {
       time: 'Just now'
     };
     setNotifications(prev => [newAlert, ...prev]);
+    return res;
   };
 
   // Tour Handlers
@@ -330,16 +407,103 @@ export default function App() {
       <LandingPageView 
         onEnterApp={() => setAppMode('app')}
         onStartTour={handleStartTour}
-        onRunSimulation={() => {
-          setAppMode('app');
-          setCurrentTab('simulation_lab');
-        }}
       />
     );
   }
 
+  // Map tab names / aliases to views
+  const renderCurrentView = () => {
+    switch (currentTab) {
+      case 'overview':
+        return (
+          <OverviewView 
+            onNavigate={navigateToTab}
+            onSelectCase={handleSelectCase}
+            quarantinedLender={quarantinedLender}
+          />
+        );
+
+      case 'risk_cases':
+      case 'collaborative_risk':
+        return (
+          <CollaborativeRiskView 
+            onSelectCase={handleSelectCase}
+            casesList={cases}
+          />
+        );
+
+      case 'customer_investigation':
+        return (
+          <CustomerInvestigationView 
+            key={selectedCase?.id || 'default'}
+            caseData={selectedCase}
+            currentRole={currentRole}
+            onBack={() => navigateToTab('risk_cases')}
+            onNavigate={navigateToTab}
+            onTriggerVerification={handleTriggerVerification}
+            onResolveVerification={handleResolveVerification}
+          />
+        );
+
+      case 'institutions':
+        return (
+          <InstitutionNetworkView 
+            selectedInstitutionId={selectedInstitutionId}
+            onSelectInstitution={setSelectedInstitutionId}
+            quarantinedLender={quarantinedLender}
+            currentRole={currentRole}
+          />
+        );
+
+      case 'security_privacy':
+      case 'privacy_center':
+      case 'trust_security':
+      case 'model_collaboration':
+        return (
+          <SecurityPrivacyView 
+            quarantinedLender={quarantinedLender}
+            onTriggerMaliciousSimulation={handleTriggerMalicious}
+            onResetMaliciousSimulation={handleResetMalicious}
+          />
+        );
+
+      case 'audit_trail':
+        return (
+          <AuditTrailView dynamicLogs={dynamicLogs} />
+        );
+
+      case 'advanced_demo':
+      case 'simulation_lab':
+      case 'secure_aggregation':
+      case 'entity_resolution':
+        return (
+          <AdvancedDemoView 
+            onRunCrossAnomaly={handleRunCrossAnomaly}
+            onSimulateMalicious={handleTriggerMalicious}
+            quarantinedLender={quarantinedLender}
+            onNavigate={navigateToTab}
+            onOpenCase={handleOpenCaseById}
+          />
+        );
+
+      case 'architecture_scope':
+        return (
+          <ArchitectureScopeView />
+        );
+
+      default:
+        return (
+          <OverviewView 
+            onNavigate={navigateToTab}
+            onSelectCase={handleSelectCase}
+            quarantinedLender={quarantinedLender}
+          />
+        );
+    }
+  };
+
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-app)' }}>
+    <div className="tm-app-root">
       {/* Top Navbar */}
       <Navbar 
         currentRole={currentRole}
@@ -351,109 +515,38 @@ export default function App() {
         alertCount={notifications.length}
         notifications={notifications}
         backendConnected={backendConnected}
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
         appMode={appMode}
         onToggleAppMode={setAppMode}
+        onToggleMobileMenu={() => setMobileMenuOpen(prev => !prev)}
+        cases={cases}
+        onSelectCase={handleSelectCase}
+        onNavigate={(tab) => {
+          setCurrentTab(tab);
+          setMobileMenuOpen(false);
+        }}
       />
 
-      {/* Main Layout Area */}
-      <div style={{ display: 'flex', flex: 1, backgroundColor: 'var(--bg-app)' }}>
+      {/* Main Workspace Layout Area */}
+      <div className="tm-app-body">
         {/* Left Navigation Sidebar */}
         <Sidebar 
           currentTab={currentTab} 
-          setTab={setCurrentTab} 
+          setTab={(tab) => {
+            setCurrentTab(tab);
+            setMobileMenuOpen(false);
+          }} 
           quarantinedLender={quarantinedLender}
+          backendConnected={backendConnected}
+          isMobileOpen={mobileMenuOpen}
+          onCloseMobile={() => setMobileMenuOpen(false)}
         />
 
         {/* Viewport Content */}
-        <main style={{
-          flex: 1,
-          padding: '24px 32px',
-          maxWidth: '1440px',
-          margin: '0 auto',
-          width: '100%',
-          overflowY: 'auto',
-          backgroundColor: 'var(--bg-app)'
-        }}>
+        <main className="tm-app-main">
           <ErrorBoundary onReset={() => setCurrentTab('overview')}>
-            {/* Current Active View */}
-            {currentTab === 'overview' && (
-              <OverviewView 
-                onNavigate={setCurrentTab}
-                onSelectInstitution={handleSelectInstitution}
-                quarantinedLender={quarantinedLender}
-              />
-            )}
-
-            {currentTab === 'institutions' && (
-              <InstitutionNetworkView 
-                selectedInstitutionId={selectedInstitutionId}
-                onSelectInstitution={setSelectedInstitutionId}
-                quarantinedLender={quarantinedLender}
-                currentRole={currentRole}
-              />
-            )}
-
-            {currentTab === 'collaborative_risk' && (
-              <CollaborativeRiskView 
-                onSelectCase={handleSelectCase}
-                onNavigate={setCurrentTab}
-                casesList={cases}
-              />
-            )}
-
-            {currentTab === 'customer_investigation' && (
-              <CustomerInvestigationView 
-                caseData={selectedCase}
-                onBack={() => setCurrentTab('collaborative_risk')}
-                onNavigate={setCurrentTab}
-                onTriggerVerification={handleTriggerVerification}
-                onResolveVerification={handleResolveVerification}
-              />
-            )}
-
-            {currentTab === 'privacy_center' && (
-              <PrivacyCenterView 
-                onNavigate={setCurrentTab}
-              />
-            )}
-
-            {currentTab === 'secure_aggregation' && (
-              <SecureAggregationLabView />
-            )}
-
-            {currentTab === 'trust_security' && (
-              <TrustSecurityView 
-                quarantinedLender={quarantinedLender}
-                onTriggerMaliciousSimulation={handleTriggerMalicious}
-                onResetMaliciousSimulation={handleResetMalicious}
-              />
-            )}
-
-            {currentTab === 'model_collaboration' && (
-              <ModelCollaborationView />
-            )}
-
-            {currentTab === 'entity_resolution' && (
-              <EntityResolutionView />
-            )}
-
-            {currentTab === 'simulation_lab' && (
-              <SimulationLabView 
-                onRunCrossAnomaly={handleRunCrossAnomaly}
-                onSimulateMalicious={handleTriggerMalicious}
-                quarantinedLender={quarantinedLender}
-                onNavigate={setCurrentTab}
-                onOpenCase={handleOpenCaseById}
-              />
-            )}
-
-            {currentTab === 'audit_trail' && (
-              <AuditTrailView dynamicLogs={dynamicLogs} />
-            )}
-
-            {currentTab === 'architecture_scope' && (
-              <ArchitectureScopeView />
-            )}
+            {renderCurrentView()}
           </ErrorBoundary>
         </main>
       </div>

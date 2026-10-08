@@ -4,7 +4,9 @@
  * Falls back gracefully to local synthetic baseline if backend is offline.
  */
 
-const API_BASE = 'http://127.0.0.1:8000/api';
+const API_BASE = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_BASE_URL)
+  ? import.meta.env.VITE_API_BASE_URL
+  : 'http://127.0.0.1:8000/api';
 
 class ApiClient {
   constructor() {
@@ -18,6 +20,7 @@ class ApiClient {
     if (token) {
       localStorage.setItem('trustmesh_token', token);
       localStorage.setItem('trustmesh_user', JSON.stringify(user));
+      localStorage.removeItem('trustmesh_logged_out');
     } else {
       localStorage.removeItem('trustmesh_token');
       localStorage.removeItem('trustmesh_user');
@@ -32,7 +35,24 @@ class ApiClient {
     return headers;
   }
 
+  async ensureAuthenticated() {
+    if (this.token) return;
+    if (localStorage.getItem('trustmesh_logged_out') === 'true') {
+      return; // Do not auto-login if user explicitly logged out
+    }
+    if (!this._loginPromise) {
+      this._loginPromise = this.autoLoginDefault().finally(() => {
+        this._loginPromise = null;
+      });
+    }
+    await this._loginPromise;
+  }
+
   async request(endpoint, options = {}) {
+    if (!this.token && !endpoint.startsWith('/auth/')) {
+      await this.ensureAuthenticated();
+    }
+
     const url = `${API_BASE}${endpoint}`;
     const config = {
       ...options,
@@ -71,6 +91,7 @@ class ApiClient {
 
   logout() {
     this.setSession(null, null);
+    localStorage.setItem('trustmesh_logged_out', 'true');
   }
 
   getCurrentUser() {
@@ -82,6 +103,9 @@ class ApiClient {
   }
 
   async autoLoginDefault() {
+    if (localStorage.getItem('trustmesh_logged_out') === 'true') {
+      return null;
+    }
     if (!this.token) {
       try {
         return await this.demoLogin('analyst');
@@ -203,6 +227,10 @@ class ApiClient {
     });
   }
 
+  async tamperSandboxAudit(targetIdx = 1) {
+    return this.simulateSandboxTamper(targetIdx);
+  }
+
   async resetSandboxAudit() {
     return this.request('/audit/sandbox/reset', {
       method: 'POST',
@@ -212,6 +240,10 @@ class ApiClient {
 
   async healthCheck() {
     return this.request('/health');
+  }
+
+  async clusterHealthCheck() {
+    return this.request('/health/cluster');
   }
 }
 

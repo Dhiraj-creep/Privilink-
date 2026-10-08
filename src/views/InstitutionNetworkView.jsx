@@ -1,38 +1,49 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Building2, 
-  ShieldCheck, 
-  TrendingUp, 
-  EyeOff,
-  AlertTriangle
+  AlertTriangle,
+  Search
 } from 'lucide-react';
+import { Card } from '../components/ui/Card';
+import { Badge } from '../components/ui/Badge';
 import { INSTITUTIONS, generateLocalSampleRows } from '../data/syntheticData';
 import { api } from '../api/client';
 
 export default function InstitutionNetworkView({ 
-  selectedInstitutionId, 
-  quarantinedLender,
+  selectedInstitutionId = 'BANK_A', 
+  quarantinedLender = false,
   currentRole
 }) {
-  const [activeInstId, setActiveInstId] = useState(selectedInstitutionId || 'BANK_A');
+  const [activeInstId, setActiveInstId] = useState(selectedInstitutionId);
   const [searchTerm, setSearchTerm] = useState('');
   const [boundaryError, setBoundaryError] = useState(null);
   const [backendRecords, setBackendRecords] = useState(null);
+  const [clusterHealth, setClusterHealth] = useState(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    api.clusterHealthCheck()
+      .then((h) => {
+        if (isMounted && h) setClusterHealth(h);
+      })
+      .catch(() => {});
+    return () => { isMounted = false; };
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
 
-    const loadRecords = async () => {
-      try {
-        const records = await api.getNodeRecords(activeInstId, 50, searchTerm);
+    api.getNodeRecords(activeInstId, 50, searchTerm)
+      .then((records) => {
         if (!isMounted) return;
         setBoundaryError(null);
-        if (Array.isArray(records) && records.length > 0) {
+        if (Array.isArray(records)) {
           setBackendRecords(records);
         } else {
           setBackendRecords(null);
         }
-      } catch (err) {
+      })
+      .catch((err) => {
         if (!isMounted) return;
         setBackendRecords(null);
         if (err.message && (err.message.includes('403') || err.message.toLowerCase().includes('forbidden') || err.message.toLowerCase().includes('boundary'))) {
@@ -40,10 +51,7 @@ export default function InstitutionNetworkView({
         } else {
           setBoundaryError(null);
         }
-      }
-    };
-
-    loadRecords();
+      });
 
     return () => { isMounted = false; };
   }, [activeInstId, currentRole, searchTerm]);
@@ -51,494 +59,406 @@ export default function InstitutionNetworkView({
   const currentInst = INSTITUTIONS[activeInstId] || INSTITUTIONS.BANK_A;
   const sampleRows = generateLocalSampleRows(activeInstId);
 
+  // Normalize rows for table
   const displayRows = (backendRecords && backendRecords.length > 0)
     ? backendRecords.map(r => {
         if (activeInstId === 'BANK_A') {
           return {
             id: r.id,
             customerRef: r.customer_ref || r.customerRef,
-            repaymentRatio: typeof r.repayment_behaviour_ratio === 'number' ? r.repayment_behaviour_ratio.toFixed(2) : r.repaymentRatio,
-            velocityAnomaly: typeof r.transaction_velocity_anomaly === 'number' ? r.transaction_velocity_anomaly.toFixed(1) : r.velocityAnomaly,
-            accountAgeMonths: r.account_tenure_months || r.accountAgeMonths,
-            consistencyIndex: typeof r.payment_consistency_index === 'number' ? r.payment_consistency_index.toFixed(2) : r.consistencyIndex,
-            localFlag: r.local_flag || r.localFlag || 'Normal'
+            col1: typeof r.repayment_behaviour_ratio === 'number' ? r.repayment_behaviour_ratio.toFixed(2) : '0.94',
+            col2: typeof r.transaction_velocity_anomaly === 'number' ? r.transaction_velocity_anomaly.toFixed(1) : '+0.2',
+            col3: r.account_tenure_months ? `${r.account_tenure_months}m` : '36m',
+            col4: typeof r.payment_consistency_index === 'number' ? r.payment_consistency_index.toFixed(2) : '0.88',
+            localFlag: r.local_flag || 'Normal'
           };
         } else if (activeInstId === 'INSURER_B') {
           return {
             id: r.id,
             customerRef: r.customer_ref || r.customerRef,
-            claimFrequency: typeof r.claim_frequency_rate === 'number' ? r.claim_frequency_rate.toFixed(2) : r.claimFrequency,
-            claimAnomalyScore: typeof r.claim_anomaly_score === 'number' ? Math.round(r.claim_anomaly_score) : r.claimAnomalyScore,
-            policyTier: r.policy_behaviour_tier || r.policyTier,
-            lossRatio: typeof r.loss_ratio_exposure === 'number' ? r.loss_ratio_exposure.toFixed(2) : r.lossRatio,
-            localFlag: r.local_flag || r.localFlag || 'Normal'
+            col1: typeof r.claim_frequency_rate === 'number' ? r.claim_frequency_rate.toFixed(2) : '0.18',
+            col2: typeof r.claim_anomaly_score === 'number' ? Math.round(r.claim_anomaly_score) : '14',
+            col3: r.policy_behaviour_tier || 'Standard',
+            col4: typeof r.loss_ratio_exposure === 'number' ? r.loss_ratio_exposure.toFixed(2) : '0.45',
+            localFlag: r.local_flag || 'Normal'
           };
         } else {
           return {
             id: r.id,
             customerRef: r.customer_ref || r.customerRef,
-            loanAppCount: r.loan_application_velocity || r.loanAppCount,
-            repaymentStress: typeof r.repayment_stress_indicator === 'number' ? Math.round(r.repayment_stress_indicator) : r.repaymentStress,
-            creditUtilization: typeof r.credit_utilization_trajectory === 'number' ? `${Math.round(r.credit_utilization_trajectory)}%` : r.creditUtilization,
-            dtiBand: r.dti_synthetic_band || r.dtiBand,
-            localFlag: r.local_flag || r.localFlag || 'Normal'
+            col1: r.loan_application_velocity || '1',
+            col2: typeof r.repayment_stress_indicator === 'number' ? Math.round(r.repayment_stress_indicator) : '22',
+            col3: typeof r.credit_utilization_trajectory === 'number' ? `${Math.round(r.credit_utilization_trajectory)}%` : '35%',
+            col4: r.dti_synthetic_band || 'Tier B',
+            localFlag: r.local_flag || 'Normal'
           };
         }
       })
-    : sampleRows;
+    : sampleRows.map(r => ({
+        id: r.id,
+        customerRef: r.customerRef,
+        col1: r.repaymentRatio || r.claimFrequency || r.loanAppCount || '—',
+        col2: r.velocityAnomaly || r.claimAnomalyScore || r.repaymentStress || '—',
+        col3: r.accountAgeMonths ? `${r.accountAgeMonths}m` : (r.policyTier || r.creditUtilization || '—'),
+        col4: r.consistencyIndex || r.lossRatio || r.dtiBand || '—',
+        localFlag: r.localFlag || 'Normal'
+      }));
 
-  const filteredRows = displayRows.filter(r => 
-    r.id?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    r.customerRef?.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredRows = displayRows.filter(r =>
+    (r.id || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (r.customerRef || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const bankNode = clusterHealth?.nodes?.BANK_A;
+  const isBankOnline = bankNode ? bankNode.status === 'REACHABLE' : true;
+
+  const insNode = clusterHealth?.nodes?.INSURER_B;
+  const isInsOnline = insNode ? insNode.status === 'REACHABLE' : true;
+
+  const lenderNode = clusterHealth?.nodes?.LENDER_C;
+  const isLenderQuarantine = quarantinedLender || (lenderNode && lenderNode.quarantined);
+  const isLenderOnline = lenderNode ? lenderNode.status === 'REACHABLE' : true;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
-      {/* Page Title */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
+      {/* Page Header */}
+      <div className="tm-page-header">
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <h1 style={{ fontSize: '1.45rem', fontWeight: 700, color: 'var(--primary-dark)' }}>
-              Institution Network & Private Local Schemas
-            </h1>
-            <span className="badge badge-demo">Synthetic Demo Data</span>
-          </div>
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
-            Each institution maintains full autonomy and sovereign custody over its private customer records.
+          <h1 className="tm-page-title">Sovereign Institution Network</h1>
+          <p className="tm-page-desc">
+            Independent participant nodes maintaining sovereign physical databases. Raw features never cross institutional firewalls.
           </p>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Badge variant="teal" size="sm">3 Participating Nodes</Badge>
+          <Badge variant="success" size="sm">Strict Isolation (HTTP 403)</Badge>
         </div>
       </div>
 
-      {/* 3 Institution Cards */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-        gap: '16px'
-      }}>
-        {/* BANK A CARD */}
-        <div 
+      {/* 3 Sovereign Institution Cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: '16px' }}>
+        {/* BANK A */}
+        <div
           onClick={() => setActiveInstId('BANK_A')}
           className="card"
           style={{
             padding: '20px',
             cursor: 'pointer',
-            border: activeInstId === 'BANK_A' ? '2px solid var(--primary-dark)' : '1px solid var(--border-light)',
-            backgroundColor: activeInstId === 'BANK_A' ? 'var(--sage-light)' : 'var(--bg-surface)',
-            boxShadow: activeInstId === 'BANK_A' ? 'var(--shadow-md)' : 'var(--shadow-sm)'
+            border: activeInstId === 'BANK_A' ? '2px solid var(--primary)' : '1px solid var(--border-default)',
+            boxShadow: activeInstId === 'BANK_A' ? 'var(--shadow-sm)' : 'var(--shadow-xs)',
+            transition: 'all var(--transition-fast)'
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <div style={{
-                width: '38px',
-                height: '38px',
-                borderRadius: 'var(--radius-sm)',
-                backgroundColor: 'var(--primary-dark)',
-                color: 'var(--text-light)',
+                width: '36px',
+                height: '36px',
+                borderRadius: 'var(--radius-md)',
+                backgroundColor: 'var(--primary-subtle)',
+                color: 'var(--primary)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center'
               }}>
-                <Building2 size={20} color="var(--muted-sage)" />
+                <Building2 size={18} />
               </div>
               <div>
-                <h3 style={{ fontSize: '0.98rem', fontWeight: 700, color: 'var(--primary-dark)' }}>
-                  BANK A
+                <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+                  Bank A Node
                 </h3>
-                <span style={{ fontSize: '0.725rem', color: 'var(--text-secondary)' }}>Retail & Commercial Banking</span>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Port 8001 • Retail Banking</span>
               </div>
             </div>
-            <span className="badge badge-success">Connected</span>
+            <Badge variant={isBankOnline ? "success" : "neutral"} size="sm">
+              {bankNode ? (isBankOnline ? "Reachable" : "Unreachable") : "Connected"}
+            </Badge>
           </div>
 
-          <div style={{ marginTop: '16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '0.775rem' }}>
+          <div style={{ marginTop: '16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '12px' }}>
             <div>
-              <span style={{ color: 'var(--text-muted)' }}>Data records:</span>
-              <p style={{ fontWeight: 600, color: 'var(--text-primary)' }}>250,000 synthetic</p>
+              <span style={{ color: 'var(--text-muted)' }}>Local Records:</span>
+              <p style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+                {backendRecords && activeInstId === 'BANK_A' ? `${backendRecords.length} Active` : '250,000'}
+              </p>
             </div>
             <div>
-              <span style={{ color: 'var(--text-muted)' }}>Local model:</span>
-              <p style={{ fontWeight: 600, color: 'var(--success-text)' }}>Healthy</p>
-            </div>
-            <div>
-              <span style={{ color: 'var(--text-muted)' }}>Last update:</span>
-              <p style={{ fontWeight: 600, color: 'var(--text-primary)' }}>42 seconds ago</p>
-            </div>
-            <div>
-              <span style={{ color: 'var(--text-muted)' }}>Trust score:</span>
-              <p style={{ fontWeight: 700, color: 'var(--primary-dark)' }}>96%</p>
+              <span style={{ color: 'var(--text-muted)' }}>Node Storage:</span>
+              <p style={{ fontWeight: 700, color: 'var(--primary)' }}>
+                {bankNode?.storage || 'Operational'}
+              </p>
             </div>
           </div>
         </div>
 
-        {/* INSURER B CARD */}
-        <div 
+        {/* INSURER B */}
+        <div
           onClick={() => setActiveInstId('INSURER_B')}
           className="card"
           style={{
             padding: '20px',
             cursor: 'pointer',
-            border: activeInstId === 'INSURER_B' ? '2px solid var(--secondary-green)' : '1px solid var(--border-light)',
-            backgroundColor: activeInstId === 'INSURER_B' ? 'var(--sage-light)' : 'var(--bg-surface)',
-            boxShadow: activeInstId === 'INSURER_B' ? 'var(--shadow-md)' : 'var(--shadow-sm)'
+            border: activeInstId === 'INSURER_B' ? '2px solid var(--primary)' : '1px solid var(--border-default)',
+            boxShadow: activeInstId === 'INSURER_B' ? 'var(--shadow-sm)' : 'var(--shadow-xs)',
+            transition: 'all var(--transition-fast)'
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <div style={{
-                width: '38px',
-                height: '38px',
-                borderRadius: 'var(--radius-sm)',
-                backgroundColor: 'var(--secondary-green)',
-                color: 'var(--text-light)',
+                width: '36px',
+                height: '36px',
+                borderRadius: 'var(--radius-md)',
+                backgroundColor: 'var(--accent-teal-subtle)',
+                color: 'var(--accent-teal)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center'
               }}>
-                <ShieldCheck size={20} color="#F8FAFC" />
+                <Building2 size={18} />
               </div>
               <div>
-                <h3 style={{ fontSize: '0.98rem', fontWeight: 700, color: 'var(--primary-dark)' }}>
-                  INSURER B
+                <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+                  Insurer B Node
                 </h3>
-                <span style={{ fontSize: '0.725rem', color: 'var(--text-secondary)' }}>General & Property Insurance</span>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Port 8002 • Property & Life</span>
               </div>
             </div>
-            <span className="badge badge-success">Connected</span>
+            <Badge variant={isInsOnline ? "success" : "neutral"} size="sm">
+              {insNode ? (isInsOnline ? "Reachable" : "Unreachable") : "Connected"}
+            </Badge>
           </div>
 
-          <div style={{ marginTop: '16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '0.775rem' }}>
+          <div style={{ marginTop: '16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '12px' }}>
             <div>
-              <span style={{ color: 'var(--text-muted)' }}>Data records:</span>
-              <p style={{ fontWeight: 600, color: 'var(--text-primary)' }}>118,000 synthetic</p>
+              <span style={{ color: 'var(--text-muted)' }}>Local Records:</span>
+              <p style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+                {backendRecords && activeInstId === 'INSURER_B' ? `${backendRecords.length} Active` : '118,000'}
+              </p>
             </div>
             <div>
-              <span style={{ color: 'var(--text-muted)' }}>Local model:</span>
-              <p style={{ fontWeight: 600, color: 'var(--success-text)' }}>Healthy</p>
-            </div>
-            <div>
-              <span style={{ color: 'var(--text-muted)' }}>Last update:</span>
-              <p style={{ fontWeight: 600, color: 'var(--text-primary)' }}>58 seconds ago</p>
-            </div>
-            <div>
-              <span style={{ color: 'var(--text-muted)' }}>Trust score:</span>
-              <p style={{ fontWeight: 700, color: 'var(--secondary-green)' }}>92%</p>
+              <span style={{ color: 'var(--text-muted)' }}>Node Storage:</span>
+              <p style={{ fontWeight: 700, color: 'var(--accent-teal)' }}>
+                {insNode?.storage || 'Operational'}
+              </p>
             </div>
           </div>
         </div>
 
-        {/* LENDER C CARD */}
-        <div 
+        {/* LENDER C */}
+        <div
           onClick={() => setActiveInstId('LENDER_C')}
           className="card"
           style={{
             padding: '20px',
             cursor: 'pointer',
-            border: quarantinedLender 
-              ? '2px solid var(--danger)' 
-              : activeInstId === 'LENDER_C' ? '2px solid var(--warning)' : '1px solid var(--border-light)',
-            backgroundColor: quarantinedLender 
-              ? 'var(--danger-light)' 
-              : activeInstId === 'LENDER_C' ? 'var(--warning-light)' : 'var(--bg-surface)',
-            boxShadow: activeInstId === 'LENDER_C' ? 'var(--shadow-md)' : 'var(--shadow-sm)'
+            border: activeInstId === 'LENDER_C' ? '2px solid var(--primary)' : '1px solid var(--border-default)',
+            boxShadow: activeInstId === 'LENDER_C' ? 'var(--shadow-sm)' : 'var(--shadow-xs)',
+            transition: 'all var(--transition-fast)'
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <div style={{
-                width: '38px',
-                height: '38px',
-                borderRadius: 'var(--radius-sm)',
-                backgroundColor: quarantinedLender ? 'var(--danger)' : 'var(--warning)',
-                color: '#fff',
+                width: '36px',
+                height: '36px',
+                borderRadius: 'var(--radius-md)',
+                backgroundColor: isLenderQuarantine ? 'var(--status-danger-subtle)' : 'var(--status-warning-subtle)',
+                color: isLenderQuarantine ? 'var(--status-danger)' : 'var(--status-warning)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center'
               }}>
-                <TrendingUp size={20} />
+                <Building2 size={18} />
               </div>
               <div>
-                <h3 style={{ fontSize: '0.98rem', fontWeight: 700, color: 'var(--primary-dark)' }}>
-                  LENDER C
+                <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+                  Lender C Node
                 </h3>
-                <span style={{ fontSize: '0.725rem', color: 'var(--text-secondary)' }}>Digital Credit & SME Loans</span>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Port 8003 • Digital Lending</span>
               </div>
             </div>
-            <span className={`badge ${quarantinedLender ? 'badge-danger' : 'badge-success'}`}>
-              {quarantinedLender ? 'Quarantined' : 'Connected'}
-            </span>
+            <Badge variant={isLenderQuarantine ? 'danger' : (isLenderOnline ? 'warning' : 'neutral')} size="sm">
+              {isLenderQuarantine ? 'Quarantined' : (lenderNode ? (isLenderOnline ? 'Reachable' : 'Unreachable') : 'Connected')}
+            </Badge>
           </div>
 
-          <div style={{ marginTop: '16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '0.775rem' }}>
+          <div style={{ marginTop: '16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '12px' }}>
             <div>
-              <span style={{ color: 'var(--text-muted)' }}>Data records:</span>
-              <p style={{ fontWeight: 600, color: 'var(--text-primary)' }}>184,000 synthetic</p>
-            </div>
-            <div>
-              <span style={{ color: 'var(--text-muted)' }}>Local model:</span>
-              <p style={{ fontWeight: 600, color: quarantinedLender ? 'var(--danger-text)' : 'var(--success-text)' }}>
-                {quarantinedLender ? 'Under Review' : 'Healthy'}
+              <span style={{ color: 'var(--text-muted)' }}>Local Records:</span>
+              <p style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+                {backendRecords && activeInstId === 'LENDER_C' ? `${backendRecords.length} Active` : '184,000'}
               </p>
             </div>
             <div>
-              <span style={{ color: 'var(--text-muted)' }}>Last update:</span>
-              <p style={{ fontWeight: 600, color: 'var(--text-primary)' }}>1 minute ago</p>
-            </div>
-            <div>
-              <span style={{ color: 'var(--text-muted)' }}>Trust score:</span>
-              <p style={{ fontWeight: 700, color: quarantinedLender ? 'var(--danger-text)' : 'var(--warning-text)' }}>
-                {quarantinedLender ? '63% (Penalized)' : '89%'}
+              <span style={{ color: 'var(--text-muted)' }}>Status:</span>
+              <p style={{ fontWeight: 700, color: isLenderQuarantine ? 'var(--status-danger)' : 'var(--status-warning)' }}>
+                {isLenderQuarantine ? 'Isolated' : (lenderNode?.storage || 'Operational')}
               </p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Strict Privacy Demarcation Banner */}
-      <div style={{
-        backgroundColor: 'var(--nav-bg)',
-        color: 'var(--text-light)',
-        borderRadius: 'var(--radius-lg)',
-        padding: '18px 24px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        border: '1px solid var(--nav-border)'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+      {/* Selected Node Details & Boundary Enforcement */}
+      <Card
+        title={`${currentInst.name} — Private Schema & Sovereign Custody`}
+        subtitle="Features held on-premise. Only scalar partial logits (z_k) leave the node boundary during federated evaluation."
+      >
+        {/* Boundary Error Alert (Visible if unauthorized cross-institution query occurs) */}
+        {boundaryError && (
           <div style={{
-            width: '42px',
-            height: '42px',
-            borderRadius: '50%',
-            backgroundColor: 'rgba(2, 132, 199, 0.15)',
-            color: 'var(--muted-sage)',
+            backgroundColor: 'var(--status-danger-subtle)',
+            border: '1.5px solid var(--status-danger-border)',
+            borderRadius: 'var(--radius-md)',
+            padding: '16px 20px',
+            marginBottom: '20px',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0
+            gap: '14px'
           }}>
-            <EyeOff size={22} />
-          </div>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span style={{ fontWeight: 700, fontSize: '0.925rem', color: '#F8FAFC', letterSpacing: '0.03em' }}>
-                STRICT PRIVACY BOUNDARY: PRIVATE TO {currentInst.shortName.toUpperCase()}
-              </span>
-              <span className="badge badge-demo" style={{ fontSize: '0.65rem', backgroundColor: '#111827', color: '#38BDF8', borderColor: '#1E293B' }}>
-                Zero External Visibility
+            <AlertTriangle size={24} color="var(--status-danger)" style={{ flexShrink: 0 }} />
+            <div>
+              <strong style={{ fontSize: '14px', color: 'var(--status-danger-text)' }}>
+                Sovereign Boundary Isolation Enforced (HTTP 403 Forbidden)
+              </strong>
+              <p style={{ fontSize: '12px', color: 'var(--status-danger-text)', margin: '4px 0 0' }}>
+                {boundaryError}
+              </p>
+              <span style={{ fontSize: '11px', color: 'var(--status-danger)', marginTop: '4px', display: 'block' }}>
+                Zero-Trust architecture prohibits any participating node from querying raw ledger rows of peer institutions.
               </span>
             </div>
-            <p style={{ fontSize: '0.785rem', color: 'var(--nav-text)', marginTop: '3px' }}>
-              The raw features and records below exist strictly within {currentInst.name}'s perimeter. They are 
-              <strong style={{ color: '#F8FAFC' }}> NOT visible to other participants</strong> and 
-              <strong style={{ color: '#F8FAFC' }}> NEVER transmitted</strong> to the central TRUSTMESH coordinator.
-            </p>
           </div>
-        </div>
+        )}
 
-        <div style={{
-          padding: '6px 14px',
-          backgroundColor: 'var(--nav-surface)',
-          borderRadius: 'var(--radius-sm)',
-          border: '1px solid var(--nav-border)',
-          fontSize: '0.75rem',
-          textAlign: 'right'
-        }}>
-          <span style={{ color: 'var(--muted-sage)', fontWeight: 600 }}>Local Model:</span><br/>
-          <span style={{ color: '#F8FAFC', fontFamily: 'var(--font-mono)' }}>PyTorch FedPer Local Head</span>
-        </div>
-      </div>
-
-      {/* Private Schema Breakdown & Sample Data Inspector */}
-      <div className="card">
-        <div className="card-header">
-          <div>
-            <h3 style={{ fontSize: '0.98rem', fontWeight: 700, color: 'var(--primary-dark)' }}>
-              {currentInst.name} — Private Schema & Local Telemetry
-            </h3>
-            <span style={{ fontSize: '0.765rem', color: 'var(--text-secondary)' }}>
-              Heterogeneous institutional schema transformed locally into normalized privacy-preserving embeddings.
-            </span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <input 
-              type="text"
-              placeholder="Search local records..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              style={{
-                padding: '6px 12px',
-                fontSize: '0.775rem',
-                border: '1px solid var(--border-medium)',
+        {/* Private Schema Breakdown */}
+        <div style={{ marginBottom: '24px' }}>
+          <h4 style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '10px' }}>
+            Institution Private Features
+          </h4>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))', gap: '10px' }}>
+            {currentInst.privateDataSchema.map((item, idx) => (
+              <div key={idx} style={{
+                padding: '12px',
+                backgroundColor: 'var(--bg-subtle)',
                 borderRadius: 'var(--radius-sm)',
-                outline: 'none',
-                width: '200px'
-              }}
-            />
-          </div>
-        </div>
-
-        <div className="card-body">
-          {/* Schema Spec Cards */}
-          <div style={{ marginBottom: '22px' }}>
-            <h4 style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '10px' }}>
-              Institution-Specific Private Features (Held On-Premise)
-            </h4>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(270px, 1fr))', gap: '12px' }}>
-              {currentInst.privateDataSchema.map((item, idx) => (
-                <div key={idx} style={{
-                  padding: '12px',
-                  backgroundColor: 'var(--bg-subtle)',
-                  borderRadius: 'var(--radius-sm)',
-                  border: '1px solid var(--border-light)'
-                }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                    <code style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--primary-dark)' }}>
-                      {item.field}
-                    </code>
-                    <span style={{ fontSize: '0.675rem', color: 'var(--text-muted)' }}>
-                      {item.type}
-                    </span>
-                  </div>
-                  <p style={{ fontSize: '0.735rem', color: 'var(--text-secondary)' }}>
-                    {item.desc}
-                  </p>
+                border: '1px solid var(--border-default)'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                  <code style={{ fontSize: '12px', fontWeight: 600, color: 'var(--primary)' }}>
+                    {item.field}
+                  </code>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                    {item.type}
+                  </span>
                 </div>
-              ))}
-            </div>
-          </div>
-
-          {boundaryError && (
-            <div style={{
-              backgroundColor: 'var(--danger-light)',
-              border: '1.5px solid var(--danger-border)',
-              borderRadius: 'var(--radius-md)',
-              padding: '16px 20px',
-              marginBottom: '20px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '14px'
-            }}>
-              <AlertTriangle size={24} color="var(--danger-text)" style={{ flexShrink: 0 }} />
-              <div>
-                <strong style={{ fontSize: '0.875rem', color: 'var(--danger-text)' }}>
-                  Sovereign Boundary Isolation Enforced (HTTP 403 Forbidden)
-                </strong>
-                <p style={{ fontSize: '0.785rem', color: 'var(--danger-text)', margin: '4px 0 0' }}>
-                  {boundaryError}. Zero-Trust architecture prohibits any participating node from querying raw ledger rows of peer institutions.
+                <p style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: 0 }}>
+                  {item.desc}
                 </p>
               </div>
-            </div>
-          )}
+            ))}
+          </div>
+        </div>
 
-          {/* Sample Table */}
-          {!boundaryError ? (
+        {/* Sovereign Records Table (Hidden if boundary violation 403) */}
+        {!boundaryError && (
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-              <h4 style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-                Local Data Records (Showing {filteredRows.length} Records)
-              </h4>
-              <span className={`badge ${backendRecords ? 'badge-success' : 'badge-neutral'}`} style={{ fontSize: '0.68rem' }}>
-                {backendRecords ? `✓ Sovereign Node DB (${backendRecords.length} Rows)` : 'Client Synthetic Demo Fallback'}
-              </span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <h4 style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', margin: 0 }}>
+                  Sovereign Database Sample Records
+                </h4>
+                <Badge variant={backendRecords ? 'success' : 'neutral'} size="sm">
+                  {backendRecords
+                    ? `Live Sovereign SQLite (${backendRecords.length} Rows)`
+                    : 'Demonstration Fixture (Offline)'}
+                </Badge>
+              </div>
+
+              <div style={{ position: 'relative', width: '220px' }}>
+                <Search size={13} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                <input
+                  type="text"
+                  placeholder="Filter local records..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  style={{ width: '100%', paddingLeft: '30px', height: '32px', fontSize: '12px' }}
+                />
+              </div>
             </div>
 
-            <div style={{ overflowX: 'auto', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.785rem', textAlign: 'left' }}>
-                <thead style={{ backgroundColor: 'var(--bg-subtle)', borderBottom: '1px solid var(--border-light)' }}>
-                  <tr>
-                    <th style={{ padding: '10px 14px', fontWeight: 600 }}>Local Record ID</th>
-                    <th style={{ padding: '10px 14px', fontWeight: 600 }}>Internal Ref</th>
+            {filteredRows.length === 0 ? (
+              <div className="tm-empty-state" style={{ padding: '32px 16px' }}>
+                <div className="tm-empty-state-icon">
+                  <Search size={20} />
+                </div>
+                <h3 className="tm-empty-state-title">No local records match query</h3>
+                <p className="tm-empty-state-desc">
+                  No records match "{searchTerm}" within {currentInst.name}'s sovereign data store.
+                </p>
+              </div>
+            ) : (
+              <div className="tm-table-container">
+                <table className="tm-table">
+                  <thead>
+                    <tr>
+                      <th>Record ID</th>
+                      <th>Customer Ref</th>
                     {activeInstId === 'BANK_A' && (
                       <>
-                        <th style={{ padding: '10px 14px', fontWeight: 600 }}>Repayment Ratio</th>
-                        <th style={{ padding: '10px 14px', fontWeight: 600 }}>Txn Velocity (Z)</th>
-                        <th style={{ padding: '10px 14px', fontWeight: 600 }}>Account Age</th>
-                        <th style={{ padding: '10px 14px', fontWeight: 600 }}>Consistency</th>
+                        <th className="col-num">Repayment Ratio</th>
+                        <th className="col-num">Txn Velocity Z</th>
+                        <th>Account Age</th>
+                        <th className="col-num">Consistency</th>
                       </>
                     )}
                     {activeInstId === 'INSURER_B' && (
                       <>
-                        <th style={{ padding: '10px 14px', fontWeight: 600 }}>Claim Freq (/yr)</th>
-                        <th style={{ padding: '10px 14px', fontWeight: 600 }}>Claim Anomaly Index</th>
-                        <th style={{ padding: '10px 14px', fontWeight: 600 }}>Policy Tier</th>
-                        <th style={{ padding: '10px 14px', fontWeight: 600 }}>Loss Ratio</th>
+                        <th className="col-num">Claim Freq Rate</th>
+                        <th className="col-num">Anomaly Index</th>
+                        <th>Policy Tier</th>
+                        <th className="col-num">Loss Exposure</th>
                       </>
                     )}
                     {activeInstId === 'LENDER_C' && (
                       <>
-                        <th style={{ padding: '10px 14px', fontWeight: 600 }}>Inquiry Count (30d)</th>
-                        <th style={{ padding: '10px 14px', fontWeight: 600 }}>Repayment Stress</th>
-                        <th style={{ padding: '10px 14px', fontWeight: 600 }}>Credit Util</th>
-                        <th style={{ padding: '10px 14px', fontWeight: 600 }}>DTI Band</th>
+                        <th className="col-num">Velocity (30d)</th>
+                        <th className="col-num">Stress Index</th>
+                        <th className="col-num">Utilization</th>
+                        <th>DTI Band</th>
                       </>
                     )}
-                    <th style={{ padding: '10px 14px', fontWeight: 600 }}>Local Isolated Status</th>
+                    <th>Local Flag</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredRows.slice(0, 10).map((row, i) => (
-                    <tr key={i} style={{ 
-                      borderBottom: '1px solid var(--border-light)',
-                      backgroundColor: row.id.includes('10482') ? 'var(--warning-light)' : (i % 2 === 0 ? 'var(--bg-surface)' : 'var(--bg-subtle)')
-                    }}>
-                      <td style={{ padding: '10px 14px', fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--primary-dark)' }}>
-                        {row.id}
-                        {row.id.includes('10482') && (
-                          <span className="badge badge-warning" style={{ marginLeft: '6px', fontSize: '0.6rem' }}>
-                            Case-10482 Subject
-                          </span>
-                        )}
+                  {filteredRows.map((r, i) => (
+                    <tr key={i}>
+                      <td style={{ fontWeight: 600, color: 'var(--primary)' }}>{r.id}</td>
+                      <td style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-secondary)' }}>
+                        {r.customerRef}
                       </td>
-                      <td style={{ padding: '10px 14px', color: 'var(--text-secondary)' }}>{row.customerRef}</td>
-                      {activeInstId === 'BANK_A' && (
-                        <>
-                          <td style={{ padding: '10px 14px' }}>{row.repaymentRatio}</td>
-                          <td style={{ padding: '10px 14px' }}>{row.velocityAnomaly}</td>
-                          <td style={{ padding: '10px 14px' }}>{row.accountAgeMonths} mos</td>
-                          <td style={{ padding: '10px 14px' }}>{row.consistencyIndex}</td>
-                        </>
-                      )}
-                      {activeInstId === 'INSURER_B' && (
-                        <>
-                          <td style={{ padding: '10px 14px' }}>{row.claimFrequency}</td>
-                          <td style={{ padding: '10px 14px' }}>{row.claimAnomalyScore} / 100</td>
-                          <td style={{ padding: '10px 14px' }}>{row.policyTier}</td>
-                          <td style={{ padding: '10px 14px' }}>{row.lossRatio}</td>
-                        </>
-                      )}
-                      {activeInstId === 'LENDER_C' && (
-                        <>
-                          <td style={{ padding: '10px 14px' }}>{row.loanAppCount}</td>
-                          <td style={{ padding: '10px 14px' }}>{row.repaymentStress}</td>
-                          <td style={{ padding: '10px 14px' }}>{row.creditUtilization}</td>
-                          <td style={{ padding: '10px 14px' }}>{row.dtiBand}</td>
-                        </>
-                      )}
-                      <td style={{ padding: '10px 14px' }}>
-                        <span className={`badge ${row.localFlag === 'Normal' ? 'badge-success' : 'badge-warning'}`}>
-                          {row.localFlag}
-                        </span>
+                      <td className="cell-num">{r.col1}</td>
+                      <td className="cell-num">{r.col2}</td>
+                      <td style={{ textAlign: activeInstId === 'BANK_A' ? 'left' : (activeInstId === 'INSURER_B' ? 'left' : 'right') }}>
+                        {r.col3}
+                      </td>
+                      <td className="cell-num">{r.col4}</td>
+                      <td>
+                        <Badge variant={r.localFlag === 'Normal' ? 'neutral' : 'warning'} size="sm">
+                          {r.localFlag}
+                        </Badge>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-
-            <p style={{ fontSize: '0.735rem', color: 'var(--text-secondary)', marginTop: '10px' }}>
-              Note how <strong>Row B-10482</strong> only shows a "Weak Anomaly" at Bank A. Without TrustMesh, Bank A would discard it as normal background variance.
-            </p>
-          </div>
-          ) : (
-            <div style={{ padding: '24px', textAlign: 'center', backgroundColor: 'var(--bg-subtle)', borderRadius: 'var(--radius-sm)', border: '1px dashed var(--border-medium)' }}>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.825rem' }}>
-                Local telemetry and ledger records for <strong>{currentInst.name}</strong> are locked behind sovereign institutional boundaries.
-              </p>
-            </div>
           )}
         </div>
-      </div>
+      )}
+      </Card>
     </div>
   );
 }

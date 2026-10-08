@@ -88,33 +88,70 @@ class SimulationService:
             "lender_dti_synthetic_band": "Tier D"
         }
 
-        # 1. Update sovereign records across participant nodes
-        from backend.nodes.bank_node import BankNodeService
-        from backend.nodes.insurer_node import InsurerNodeService
-        from backend.nodes.lender_node import LenderNodeService
+        # 1. Update sovereign records across participant nodes via authenticated RPC
+        from backend.config import (
+            BANK_A_URL, INSURER_B_URL, LENDER_C_URL,
+            INTERNAL_SERVICE_KEY, TRUSTMESH_ENV, TRUSTMESH_MODE
+        )
+        is_test_adapter_allowed = (
+            TRUSTMESH_ENV != "production" and (
+                TRUSTMESH_MODE == "test_inprocess"
+            )
+        )
 
-        BankNodeService().update_record("ENTITY-7F21", {
-            "repayment_behaviour_ratio": 0.82,
-            "transaction_velocity_anomaly": 2.1,
-            "local_flag": "Weak Anomaly"
-        })
-        InsurerNodeService().update_record("ENTITY-7F21", {
-            "claim_frequency_rate": 3.2,
-            "claim_anomaly_score": 72.0,
-            "local_flag": "Weak Anomaly"
-        })
-        LenderNodeService().update_record("ENTITY-7F21", {
-            "loan_application_velocity": 3,
-            "repayment_stress_indicator": 78.0,
-            "credit_utilization_trajectory": 84.0,
-            "local_flag": "Weak Anomaly"
-        })
+        node_mutations = [
+            ("BANK_A", BANK_A_URL, "backend.nodes.bank_node", "BankNodeService", {
+                "repayment_behaviour_ratio": 0.82,
+                "transaction_velocity_anomaly": 2.1,
+                "local_flag": "Weak Anomaly"
+            }),
+            ("INSURER_B", INSURER_B_URL, "backend.nodes.insurer_node", "InsurerNodeService", {
+                "claim_frequency_rate": 3.2,
+                "claim_anomaly_score": 72.0,
+                "local_flag": "Weak Anomaly"
+            }),
+            ("LENDER_C", LENDER_C_URL, "backend.nodes.lender_node", "LenderNodeService", {
+                "loan_application_velocity": 3,
+                "repayment_stress_indicator": 78.0,
+                "credit_utilization_trajectory": 84.0,
+                "local_flag": "Weak Anomaly"
+            })
+        ]
 
-        # 2. Run distributed VFL model inference across sovereign nodes
+        import httpx
+        for inst_id, base_url, mod_path, cls_name, updates in node_mutations:
+            if is_test_adapter_allowed:
+                import importlib
+                mod = importlib.import_module(mod_path)
+                cls = getattr(mod, cls_name)
+                cls().update_record("ENTITY-7F21", updates)
+                continue
+
+            success = False
+            try:
+                with httpx.Client(timeout=1.0) as client:
+                    resp = client.post(
+                        f"{base_url}/demo/inject-anomaly",
+                        json={"entity_ref": "ENTITY-7F21", "updates": updates},
+                        headers={"X-Internal-Service-Key": INTERNAL_SERVICE_KEY}
+                    )
+                    if resp.status_code == 200:
+                        success = True
+            except Exception:
+                pass
+
+            if not success:
+                from fastapi import HTTPException
+                raise HTTPException(
+                    status_code=503,
+                    detail=f"Distributed scenario aborted: Sovereign participant node {inst_id} at {base_url} is unreachable."
+                )
+
+        # 2. Run distributed VFL model inference across sovereign nodes (fails if any node is unreachable)
         if self.vfl_engine.vfl_model is None:
             self.vfl_engine.train_and_evaluate()
 
-        prediction = self.vfl_engine.predict_distributed("ENTITY-7F21", fallback_features=anomaly_features)
+        prediction = self.vfl_engine.predict_distributed("ENTITY-7F21")
         score = float(prediction["score"])
         confidence = score
         risk_level = prediction["risk_level"]
@@ -235,26 +272,53 @@ class SimulationService:
         self.save_network_state(state)
 
         # Reset sovereign records across participant nodes
-        from backend.nodes.bank_node import BankNodeService
-        from backend.nodes.insurer_node import InsurerNodeService
-        from backend.nodes.lender_node import LenderNodeService
+        from backend.config import (
+            BANK_A_URL, INSURER_B_URL, LENDER_C_URL,
+            INTERNAL_SERVICE_KEY, TRUSTMESH_ENV, TRUSTMESH_MODE
+        )
+        is_test_adapter_allowed = (
+            TRUSTMESH_ENV != "production" and (
+                TRUSTMESH_MODE == "test_inprocess"
+            )
+        )
 
-        BankNodeService().update_record("ENTITY-7F21", {
-            "repayment_behaviour_ratio": 0.78,
-            "transaction_velocity_anomaly": 0.8,
-            "local_flag": "Normal"
-        })
-        InsurerNodeService().update_record("ENTITY-7F21", {
-            "claim_frequency_rate": 0.55,
-            "claim_anomaly_score": 42.0,
-            "local_flag": "Normal"
-        })
-        LenderNodeService().update_record("ENTITY-7F21", {
-            "loan_application_velocity": 2,
-            "repayment_stress_indicator": 48.0,
-            "credit_utilization_trajectory": 58.0,
-            "local_flag": "Normal"
-        })
+        reset_mutations = [
+            ("BANK_A", BANK_A_URL, "backend.nodes.bank_node", "BankNodeService", {
+                "repayment_behaviour_ratio": 0.78,
+                "transaction_velocity_anomaly": 0.8,
+                "local_flag": "Normal"
+            }),
+            ("INSURER_B", INSURER_B_URL, "backend.nodes.insurer_node", "InsurerNodeService", {
+                "claim_frequency_rate": 0.55,
+                "claim_anomaly_score": 42.0,
+                "local_flag": "Normal"
+            }),
+            ("LENDER_C", LENDER_C_URL, "backend.nodes.lender_node", "LenderNodeService", {
+                "loan_application_velocity": 2,
+                "repayment_stress_indicator": 48.0,
+                "credit_utilization_trajectory": 58.0,
+                "local_flag": "Normal"
+            })
+        ]
+
+        import httpx
+        for inst_id, base_url, mod_path, cls_name, updates in reset_mutations:
+            if is_test_adapter_allowed:
+                import importlib
+                mod = importlib.import_module(mod_path)
+                cls = getattr(mod, cls_name)
+                cls().update_record("ENTITY-7F21", updates)
+                continue
+
+            try:
+                with httpx.Client(timeout=1.0) as client:
+                    client.post(
+                        f"{base_url}/demo/inject-anomaly",
+                        json={"entity_ref": "ENTITY-7F21", "updates": updates},
+                        headers={"X-Internal-Service-Key": INTERNAL_SERVICE_KEY}
+                    )
+            except Exception:
+                pass
 
         # Reset CASE-10482 to baseline review
         now = datetime.now(timezone.utc).isoformat()
@@ -270,6 +334,11 @@ class SimulationService:
                     updated_at = ?
                 WHERE id = 'CASE-10482'
             """, (now,))
+            conn.execute("""
+                UPDATE verification_tasks
+                SET status = 'CANCELLED', notes = 'Cancelled by simulation reset'
+                WHERE case_id = 'CASE-10482' AND status = 'REQUESTED'
+            """)
             conn.commit()
 
         return {"success": True, "message": "Demo state reset to baseline.", "state": state}

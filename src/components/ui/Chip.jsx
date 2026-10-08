@@ -3,38 +3,36 @@ import { ArrowUpRight, ArrowDownRight, Minus } from 'lucide-react';
 
 export function Chip({
   value,
-  trend = 'neutral', // 'positive' | 'negative' | 'neutral'
-  isGood = true,     // if true, positive is green; if false, positive is red (e.g. increase in fraud)
+  trend = 'neutral', // 'up' | 'down' | 'neutral'
+  isGood = true,     // if true, positive is green; if false, positive is red
   label = null,
   style = {},
   className = '',
   ...props
 }) {
-  // Determine color semantic
-  let color = 'var(--text-secondary)';
-  let bg = 'rgba(102, 116, 143, 0.12)';
-  let border = 'var(--border-default)';
+  let color = '#475569';
+  let bg = '#F1F5F9';
+  let border = '#E2E8F0';
 
   if (trend === 'up') {
     if (isGood) {
-      color = 'var(--success)';
-      bg = 'var(--success-subtle)';
-      border = 'var(--success-border)';
+      color = '#15803D';
+      bg = '#F0FDF4';
+      border = '#BBF7D0';
     } else {
-      color = 'var(--danger)';
-      bg = 'var(--danger-subtle)';
-      border = 'var(--danger-border)';
+      color = '#B91C1C';
+      bg = '#FEF2F2';
+      border = '#FECACA';
     }
   } else if (trend === 'down') {
     if (isGood) {
-      // downward trend is good (e.g., lower latency or drop in loan stacking alerts)
-      color = 'var(--success)';
-      bg = 'var(--success-subtle)';
-      border = 'var(--success-border)';
+      color = '#15803D';
+      bg = '#F0FDF4';
+      border = '#BBF7D0';
     } else {
-      color = 'var(--danger)';
-      bg = 'var(--danger-subtle)';
-      border = 'var(--danger-border)';
+      color = '#B91C1C';
+      bg = '#FEF2F2';
+      border = '#FECACA';
     }
   }
 
@@ -45,25 +43,25 @@ export function Chip({
         display: 'inline-flex',
         alignItems: 'center',
         gap: '3px',
-        padding: '2px 7px',
-        fontSize: 'var(--text-xs)',
+        padding: '2px 8px',
+        fontSize: '11px',
         fontWeight: 600,
         borderRadius: 'var(--radius-full)',
         backgroundColor: bg,
         color: color,
         border: `1px solid ${border}`,
-        fontFamily: 'var(--font-mono)',
+        fontFamily: 'var(--font-sans)',
         fontVariantNumeric: 'tabular-nums',
         whiteSpace: 'nowrap',
         ...style
       }}
       {...props}
     >
-      {trend === 'up' && <ArrowUpRight size={12} strokeWidth={2.4} />}
-      {trend === 'down' && <ArrowDownRight size={12} strokeWidth={2.4} />}
-      {trend === 'neutral' && <Minus size={11} strokeWidth={2.4} />}
+      {trend === 'up' && <ArrowUpRight size={11} strokeWidth={2.5} />}
+      {trend === 'down' && <ArrowDownRight size={11} strokeWidth={2.5} />}
+      {trend === 'neutral' && <Minus size={10} strokeWidth={2.5} />}
       <span>{value}</span>
-      {label && <span style={{ color: 'var(--text-muted)', marginLeft: '2px' }}>{label}</span>}
+      {label && <span style={{ color: '#64748B', marginLeft: '3px' }}>{label}</span>}
     </span>
   );
 }

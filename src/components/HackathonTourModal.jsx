@@ -2,7 +2,8 @@ import React from 'react';
 import { 
   ChevronRight, 
   ChevronLeft, 
-  X
+  X,
+  Sparkles
 } from 'lucide-react';
 import { TOUR_STEPS } from '../data/tourSteps';
 
@@ -19,44 +20,61 @@ export default function HackathonTourModal({
     onJumpToTab(TOUR_STEPS[idx].tab, idx);
   };
 
+  React.useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   return (
-    <div style={{
+    <div
+      role="dialog"
+      aria-label="Interactive Product Tour"
+      style={{
       position: 'fixed',
-      bottom: '24px',
-      right: '24px',
-      width: '430px',
-      maxWidth: 'calc(100vw - 48px)',
-      backgroundColor: 'var(--nav-bg)',
-      color: '#F8FAFC',
-      borderRadius: 'var(--radius-lg)',
-      boxShadow: '0 20px 30px -5px rgba(0, 0, 0, 0.5), 0 8px 12px -6px rgba(0, 0, 0, 0.4)',
-      border: '1px solid var(--nav-border)',
+      bottom: '16px',
+      right: '16px',
+      width: '420px',
+      maxWidth: 'calc(100vw - 32px)',
+      backgroundColor: '#FFFFFF',
+      color: 'var(--text-primary)',
+      borderRadius: 'var(--radius-xl)',
+      boxShadow: 'var(--shadow-lg)',
+      border: '1px solid var(--border-default)',
       zIndex: 100,
       overflow: 'hidden'
     }}>
       {/* Header */}
       <div style={{
         padding: '12px 18px',
-        backgroundColor: 'var(--nav-surface)',
-        borderBottom: '1px solid var(--nav-border)',
+        backgroundColor: 'var(--bg-subtle)',
+        borderBottom: '1px solid var(--border-default)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{
-            width: '8px',
-            height: '8px',
-            borderRadius: '50%',
-            backgroundColor: 'var(--muted-sage)'
-          }} />
-          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--muted-sage)', letterSpacing: '0.04em' }}>
+          <Sparkles size={14} color="var(--primary)" />
+          <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--primary)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
             {current.badge}
           </span>
         </div>
         <button 
           onClick={onClose}
-          style={{ color: 'var(--nav-text)', padding: '2px', display: 'flex', alignItems: 'center' }}
+          aria-label="Exit Tour"
+          style={{
+            color: 'var(--text-muted)',
+            padding: '2px',
+            display: 'flex',
+            alignItems: 'center',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer'
+          }}
           title="Exit Tour"
         >
           <X size={16} />
@@ -65,26 +83,26 @@ export default function HackathonTourModal({
 
       {/* Body */}
       <div style={{ padding: '18px' }}>
-        <h4 style={{ fontSize: '1rem', fontWeight: 600, color: '#F8FAFC', marginBottom: '10px' }}>
+        <h4 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>
           {current.title}
         </h4>
         
         <div style={{
-          backgroundColor: 'var(--nav-surface)',
-          borderLeft: '3px solid var(--muted-sage)',
+          backgroundColor: 'var(--primary-subtle)',
+          borderLeft: '3px solid var(--primary)',
           padding: '10px 14px',
           borderRadius: '0 var(--radius-sm) var(--radius-sm) 0',
           marginBottom: '12px',
-          fontSize: '0.815rem',
-          color: '#F1F5F9',
+          fontSize: '12px',
+          color: 'var(--primary-text)',
           lineHeight: 1.45
         }}>
-          <strong style={{ color: 'var(--muted-sage)' }}>Presenter Pitch: </strong>
+          <strong>Presenter Pitch: </strong>
           "{current.speakerPitch}"
         </div>
 
-        <p style={{ fontSize: '0.765rem', color: 'var(--nav-text)', lineHeight: 1.45, marginBottom: '16px' }}>
-          <strong style={{ color: '#F8FAFC' }}>Key Insight: </strong>
+        <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.45, marginBottom: '16px' }}>
+          <strong style={{ color: 'var(--text-primary)' }}>Key Takeaway: </strong>
           {current.takeaway}
         </p>
 
@@ -94,51 +112,47 @@ export default function HackathonTourModal({
             <button
               key={s.step}
               onClick={() => handleStepClick(i)}
+              aria-label={`Jump to tour step ${i + 1}`}
               style={{
                 flex: 1,
                 height: '4px',
                 borderRadius: '2px',
-                backgroundColor: i === currentStepIndex ? 'var(--muted-sage)' : i < currentStepIndex ? 'var(--success)' : 'var(--nav-surface)',
-                cursor: 'pointer'
+                backgroundColor: i === currentStepIndex ? 'var(--primary)' : (i < currentStepIndex ? 'var(--primary-border)' : 'var(--border-default)'),
+                border: 'none',
+                padding: 0,
+                cursor: 'pointer',
+                transition: 'background-color 0.2s ease'
               }}
-              title={`Step ${s.step}: ${s.title}`}
             />
           ))}
         </div>
 
-        {/* Controls */}
+        {/* Action Controls */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <button
-            onClick={onPrev}
-            disabled={currentStepIndex === 0}
-            className="btn btn-sm"
-            style={{
-              backgroundColor: 'var(--nav-surface)',
-              color: currentStepIndex === 0 ? 'var(--nav-border)' : 'var(--nav-text)',
-              border: '1px solid var(--nav-border)'
-            }}
-          >
-            <ChevronLeft size={14} />
-            <span>Previous</span>
-          </button>
-
-          <span style={{ fontSize: '0.725rem', color: 'var(--nav-text)' }}>
-            {currentStepIndex + 1} of {TOUR_STEPS.length}
+          <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>
+            Step {currentStepIndex + 1} of {TOUR_STEPS.length}
           </span>
 
-          <button
-            onClick={onNext}
-            className="btn btn-sm"
-            style={{
-              backgroundColor: 'var(--secondary-green)',
-              color: '#FFFFFF',
-              border: '1px solid var(--muted-sage)',
-              fontWeight: 600
-            }}
-          >
-            <span>{currentStepIndex === TOUR_STEPS.length - 1 ? 'Finish Pitch' : 'Next Step'}</span>
-            <ChevronRight size={14} />
-          </button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              onClick={onPrev}
+              disabled={currentStepIndex === 0}
+              className="btn btn-secondary btn-sm"
+              aria-label="Previous tour step"
+              style={{ padding: '4px 8px' }}
+            >
+              <ChevronLeft size={14} />
+            </button>
+
+            <button
+              onClick={onNext}
+              className="btn btn-primary btn-sm"
+              style={{ padding: '4px 12px' }}
+            >
+              <span>{currentStepIndex === TOUR_STEPS.length - 1 ? 'Finish Tour' : 'Next'}</span>
+              <ChevronRight size={14} />
+            </button>
+          </div>
         </div>
       </div>
     </div>

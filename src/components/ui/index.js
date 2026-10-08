@@ -5,3 +5,4 @@ export { Button } from './Button';
 export { Tooltip } from './Tooltip';
 export { Skeleton } from './Skeleton';
 export { Sparkline } from './Sparkline';
+export { Modal } from './Modal';

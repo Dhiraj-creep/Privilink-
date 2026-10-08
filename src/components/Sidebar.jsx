@@ -1,35 +1,34 @@
 import React, { useState, useEffect } from 'react';
 import {
   LayoutDashboard,
-  Building2,
   AlertTriangle,
-  UserSearch,
-  Shield,
-  Layers,
+  Building2,
   ShieldCheck,
-  Network,
-  Fingerprint,
-  Terminal,
   FileCheck2,
+  FlaskConical,
   BookOpen,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  X
 } from 'lucide-react';
 import { Tooltip } from './ui/Tooltip';
 
 export default function Sidebar({
   currentTab,
   setTab,
-  quarantinedLender,
+  quarantinedLender = false,
+  backendConnected = false,
   collapsed = false,
-  onToggleCollapse
+  onToggleCollapse,
+  isMobileOpen = false,
+  onCloseMobile
 }) {
   const [isCollapsed, setIsCollapsed] = useState(collapsed);
 
-  // Auto-collapse below 1100px screen width
+  // Auto-collapse on tablet (768px - 1024px)
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth < 1100) {
+      if (window.innerWidth < 1024 && window.innerWidth >= 768) {
         setIsCollapsed(true);
         if (onToggleCollapse) onToggleCollapse(true);
       }
@@ -39,370 +38,425 @@ export default function Sidebar({
     return () => window.removeEventListener('resize', handleResize);
   }, [onToggleCollapse]);
 
+  // Handle Escape key for mobile drawer
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && isMobileOpen && onCloseMobile) {
+        onCloseMobile();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isMobileOpen, onCloseMobile]);
+
   const toggleCollapse = () => {
     const next = !isCollapsed;
     setIsCollapsed(next);
     if (onToggleCollapse) onToggleCollapse(next);
   };
 
-  const navSections = [
+  const handleNavClick = (tabId) => {
+    setTab(tabId);
+    if (isMobileOpen && onCloseMobile) {
+      onCloseMobile();
+    }
+  };
+
+  // 5 Primary Navigation Destinations
+  const primaryNavItems = [
     {
-      group: 'Monitor',
-      items: [
-        { id: 'overview', label: 'Overview Dashboard', icon: LayoutDashboard },
-        { id: 'collaborative_risk', label: 'Collaborative Risk', icon: AlertTriangle, badge: '6 Active' }
-      ]
+      id: 'overview',
+      label: 'Overview',
+      icon: LayoutDashboard,
+      description: 'System HUD, principal risk & activity'
     },
     {
-      group: 'Investigate',
-      items: [
-        { id: 'customer_investigation', label: 'Case Investigation', icon: UserSearch },
-        { id: 'institutions', label: 'Institution Network', icon: Building2 }
-      ]
+      id: 'risk_cases',
+      label: 'Risk Cases',
+      icon: AlertTriangle,
+      badge: 'Cases',
+      description: 'Collaborative cross-institution investigations'
     },
     {
-      group: 'Network & Privacy',
-      items: [
-        { id: 'model_collaboration', label: 'Model Collaboration', icon: Network },
-        { id: 'privacy_center', label: 'Differential Privacy', icon: Shield },
-        { id: 'audit_trail', label: 'Cryptographic Audit', icon: FileCheck2 }
-      ]
+      id: 'institutions',
+      label: 'Institutions',
+      icon: Building2,
+      description: 'Sovereign participant nodes & schemas'
     },
     {
-      group: 'Lab',
-      items: [
-        { id: 'simulation_lab', label: 'Simulation Lab', icon: Terminal, highlight: true },
-        { id: 'secure_aggregation', label: 'Secure Aggregation', icon: Layers },
-        { id: 'entity_resolution', label: 'Private Entity PSI', icon: Fingerprint },
-        { id: 'trust_security', label: 'Trust & Security', icon: ShieldCheck, warning: quarantinedLender ? 'Alert' : null },
-        { id: 'architecture_scope', label: 'Architecture & Scope', icon: BookOpen }
-      ]
+      id: 'security_privacy',
+      label: 'Security & Privacy',
+      icon: ShieldCheck,
+      alert: quarantinedLender ? 'Alert' : null,
+      description: 'DP-SGD, Byzantine defense & model metrics'
+    },
+    {
+      id: 'audit_trail',
+      label: 'Audit Trail',
+      icon: FileCheck2,
+      description: 'Tamper-evident SHA-256 event ledger'
     }
   ];
 
-  return (
-    <aside
-      className="tm-sidebar"
-      style={{
-        width: isCollapsed ? '64px' : '240px',
-        backgroundColor: 'var(--bg-surface)',
-        borderRight: '1px solid var(--border-default)',
-        display: 'flex',
-        flexDirection: 'column',
-        flexShrink: 0,
-        minHeight: 'calc(100vh - 56px)',
-        transition: 'width var(--transition-normal)',
-        zIndex: 30,
-        position: 'relative',
-        userSelect: 'none'
-      }}
-    >
-      {/* Sidebar Header: Logo & Wordmark + Collapse Trigger */}
+  // Secondary Destinations
+  const secondaryNavItems = [
+    {
+      id: 'advanced_demo',
+      label: 'Demo Labs',
+      icon: FlaskConical,
+      description: 'SecAgg, PSI, and anomaly simulation labs'
+    },
+    {
+      id: 'architecture_scope',
+      label: 'Architecture & Scope',
+      icon: BookOpen,
+      description: 'Technical specs & sovereign data flow'
+    }
+  ];
+
+  const renderNavList = (isMobileDrawer = false) => (
+    <div style={{ padding: '16px 10px', flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
       <div
         style={{
-          height: '56px',
-          padding: isCollapsed ? '0 12px' : '0 16px',
-          borderBottom: '1px solid var(--border-default)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: isCollapsed ? 'center' : 'space-between',
-          gap: '8px'
+          padding: '4px 10px 8px 10px',
+          fontSize: '11px',
+          fontWeight: 700,
+          color: 'var(--text-muted)',
+          textTransform: 'uppercase',
+          letterSpacing: '0.06em',
+          display: (!isMobileDrawer && isCollapsed) ? 'none' : 'block'
         }}
       >
-        {!isCollapsed ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div
-              style={{
-                width: '28px',
-                height: '28px',
-                borderRadius: 'var(--radius-sm)',
-                background: 'linear-gradient(135deg, #10B981 0%, #047857 100%)',
-                boxShadow: '0 2px 8px rgba(16, 185, 129, 0.4)',
-                color: '#FFFFFF',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0
-              }}
-            >
-              <ShieldCheck size={18} strokeWidth={2.4} />
-            </div>
-            <div>
-              <div
-                style={{
-                  fontWeight: 700,
-                  fontSize: 'var(--text-base)',
-                  letterSpacing: '-0.02em',
-                  color: 'var(--text-primary)',
-                  lineHeight: 1.1
-                }}
-              >
-                TRUSTMESH
-              </div>
-              <div
-                style={{
-                  fontSize: 'var(--text-xs)',
-                  color: 'var(--text-muted)',
-                  letterSpacing: '0.04em',
-                  textTransform: 'uppercase',
-                  fontWeight: 600
-                }}
-              >
-                Risk Intelligence
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div
+        Core Workflows
+      </div>
+
+      {primaryNavItems.map((item) => {
+        const Icon = item.icon;
+        const isActive = currentTab === item.id || 
+          (item.id === 'risk_cases' && currentTab === 'customer_investigation') ||
+          (item.id === 'risk_cases' && currentTab === 'collaborative_risk');
+
+        const buttonElement = (
+          <button
+            onClick={() => handleNavClick(item.id === 'risk_cases' ? 'risk_cases' : item.id)}
+            aria-label={item.label}
+            aria-current={isActive ? 'page' : undefined}
             style={{
-              width: '32px',
-              height: '32px',
-              borderRadius: 'var(--radius-sm)',
-              backgroundColor: 'var(--primary)',
-              color: '#FFFFFF',
+              width: '100%',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center'
+              gap: '10px',
+              padding: (!isMobileDrawer && isCollapsed) ? '10px 0' : '9px 12px',
+              justifyContent: (!isMobileDrawer && isCollapsed) ? 'center' : 'flex-start',
+              borderRadius: 'var(--radius-md)',
+              backgroundColor: isActive ? 'var(--primary-subtle)' : 'transparent',
+              color: isActive ? 'var(--primary)' : 'var(--text-secondary)',
+              fontWeight: isActive ? 600 : 500,
+              fontSize: 'var(--text-sm)',
+              border: 'none',
+              cursor: 'pointer',
+              transition: 'all var(--transition-fast)',
+              position: 'relative'
+            }}
+            onMouseEnter={(e) => {
+              if (!isActive) {
+                e.currentTarget.style.backgroundColor = 'var(--bg-subtle)';
+                e.currentTarget.style.color = 'var(--text-primary)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!isActive) {
+                e.currentTarget.style.backgroundColor = 'transparent';
+                e.currentTarget.style.color = 'var(--text-secondary)';
+              }
             }}
           >
-            <ShieldCheck size={18} strokeWidth={2.4} />
-          </div>
-        )}
-
-        <button
-          onClick={toggleCollapse}
-          title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          style={{
-            width: '24px',
-            height: '24px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderRadius: 'var(--radius-xs)',
-            color: 'var(--text-muted)',
-            backgroundColor: 'transparent',
-            border: '1px solid transparent'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = 'var(--bg-surface-hover)';
-            e.currentTarget.style.color = 'var(--text-primary)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'transparent';
-            e.currentTarget.style.color = 'var(--text-muted)';
-          }}
-        >
-          {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
-        </button>
-      </div>
-
-      {/* Nav List */}
-      <nav
-        style={{
-          flex: 1,
-          overflowY: 'auto',
-          overflowX: 'hidden',
-          padding: isCollapsed ? '12px 6px' : '14px 10px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '16px'
-        }}
-      >
-        {navSections.map((section, sIdx) => (
-          <div key={sIdx} style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-            {!isCollapsed && (
-              <div
+            <Icon
+              size={18}
+              color={isActive ? 'var(--primary)' : 'var(--text-muted)'}
+              strokeWidth={isActive ? 2.2 : 1.8}
+            />
+            {(isMobileDrawer || !isCollapsed) && (
+              <span style={{ flex: 1, textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {item.label}
+              </span>
+            )}
+            {(isMobileDrawer || !isCollapsed) && item.alert && (
+              <span
                 style={{
-                  padding: '4px 10px',
-                  fontSize: 'var(--text-xs)',
+                  padding: '1px 6px',
+                  borderRadius: 'var(--radius-full)',
+                  backgroundColor: 'var(--status-danger-subtle)',
+                  color: 'var(--status-danger)',
+                  fontSize: '10px',
                   fontWeight: 700,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.06em',
-                  color: 'var(--text-muted)'
+                  border: '1px solid var(--status-danger-border)'
                 }}
               >
-                {section.group}
-              </div>
+                {item.alert}
+              </span>
             )}
+          </button>
+        );
 
-            {section.items.map((item) => {
-              const Icon = item.icon;
-              const isActive = currentTab === item.id;
+        if (!isMobileDrawer && isCollapsed) {
+          return (
+            <Tooltip key={item.id} content={item.label} position="right">
+              {buttonElement}
+            </Tooltip>
+          );
+        }
+        return <React.Fragment key={item.id}>{buttonElement}</React.Fragment>;
+      })}
 
-              const buttonContent = (
-                <button
-                  key={item.id}
-                  onClick={() => setTab(item.id)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: isCollapsed ? 0 : '10px',
-                    justifyContent: isCollapsed ? 'center' : 'flex-start',
-                    padding: isCollapsed ? '9px 0' : '8px 12px',
-                    borderRadius: 'var(--radius-sm)',
-                    backgroundColor: isActive ? 'var(--primary-subtle)' : 'transparent',
-                    color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
-                    fontWeight: isActive ? 600 : 500,
-                    fontSize: 'var(--text-base)',
-                    textAlign: 'left',
-                    width: '100%',
-                    borderLeft: isActive ? '3px solid var(--primary)' : '3px solid transparent',
-                    transition: 'all var(--transition-fast)',
-                    position: 'relative'
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isActive) {
-                      e.currentTarget.style.backgroundColor = 'var(--bg-surface-hover)';
-                      e.currentTarget.style.color = 'var(--text-primary)';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isActive) {
-                      e.currentTarget.style.backgroundColor = 'transparent';
-                      e.currentTarget.style.color = 'var(--text-secondary)';
-                    }
-                  }}
-                >
-                  <Icon
-                    size={16}
-                    strokeWidth={isActive ? 2.2 : 1.8}
-                    style={{
-                      color: isActive ? 'var(--primary-hover)' : 'var(--text-muted)',
-                      flexShrink: 0
-                    }}
-                  />
+      {/* Subtle Divider */}
+      <div style={{ height: '1px', backgroundColor: 'var(--border-default)', margin: '14px 4px' }} />
 
-                  {!isCollapsed && (
-                    <span
-                      style={{
-                        flex: 1,
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis'
-                      }}
-                    >
-                      {item.label}
-                    </span>
-                  )}
-
-                  {!isCollapsed && item.badge && (
-                    <span
-                      style={{
-                        fontSize: 'var(--text-xs)',
-                        padding: '1px 5px',
-                        backgroundColor: 'var(--bg-surface-raised)',
-                        color: 'var(--text-secondary)',
-                        borderRadius: 'var(--radius-xs)',
-                        border: '1px solid var(--border-default)',
-                        fontWeight: 600
-                      }}
-                    >
-                      {item.badge}
-                    </span>
-                  )}
-
-                  {!isCollapsed && item.warning && (
-                    <span
-                      style={{
-                        fontSize: 'var(--text-xs)',
-                        padding: '1px 5px',
-                        backgroundColor: 'var(--danger-subtle)',
-                        color: 'var(--danger)',
-                        borderRadius: 'var(--radius-xs)',
-                        border: '1px solid var(--danger-border)',
-                        fontWeight: 600
-                      }}
-                    >
-                      {item.warning}
-                    </span>
-                  )}
-
-                  {isCollapsed && (item.badge || item.warning) && (
-                    <span
-                      style={{
-                        position: 'absolute',
-                        top: '6px',
-                        right: '8px',
-                        width: '6px',
-                        height: '6px',
-                        borderRadius: '50%',
-                        backgroundColor: item.warning ? 'var(--danger)' : 'var(--primary)'
-                      }}
-                    />
-                  )}
-                </button>
-              );
-
-              return isCollapsed ? (
-                <Tooltip key={item.id} content={item.label} position="right">
-                  {buttonContent}
-                </Tooltip>
-              ) : (
-                buttonContent
-              );
-            })}
-          </div>
-        ))}
-      </nav>
-
-      {/* Sidebar Footer: Node Health & Version */}
       <div
         style={{
-          padding: isCollapsed ? '12px 6px' : '14px 16px',
-          borderTop: '1px solid var(--border-default)',
-          backgroundColor: 'rgba(0, 0, 0, 0.2)',
-          fontSize: 'var(--text-xs)'
+          padding: '4px 10px 8px 10px',
+          fontSize: '11px',
+          fontWeight: 700,
+          color: 'var(--text-muted)',
+          textTransform: 'uppercase',
+          letterSpacing: '0.06em',
+          display: (!isMobileDrawer && isCollapsed) ? 'none' : 'block'
         }}
       >
-        {!isCollapsed ? (
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span
-                  style={{
-                    width: '7px',
-                    height: '7px',
-                    borderRadius: '50%',
-                    backgroundColor: quarantinedLender ? 'var(--warning)' : 'var(--success)',
-                    boxShadow: quarantinedLender
-                      ? '0 0 6px var(--warning)'
-                      : '0 0 6px var(--success)',
-                    display: 'inline-block'
-                  }}
-                />
-                <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
-                  {quarantinedLender ? 'Node Degraded' : 'Node online'}
+        Labs & Specs
+      </div>
+
+      {secondaryNavItems.map((item) => {
+        const Icon = item.icon;
+        const isActive = currentTab === item.id || 
+          (item.id === 'advanced_demo' && ['simulation_lab', 'secure_aggregation', 'entity_resolution'].includes(currentTab));
+
+        const buttonElement = (
+          <button
+            onClick={() => handleNavClick(item.id)}
+            aria-label={item.label}
+            aria-current={isActive ? 'page' : undefined}
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              padding: (!isMobileDrawer && isCollapsed) ? '10px 0' : '9px 12px',
+              justifyContent: (!isMobileDrawer && isCollapsed) ? 'center' : 'flex-start',
+              borderRadius: 'var(--radius-md)',
+              backgroundColor: isActive ? 'var(--primary-subtle)' : 'transparent',
+              color: isActive ? 'var(--primary)' : 'var(--text-secondary)',
+              fontWeight: isActive ? 600 : 500,
+              fontSize: 'var(--text-sm)',
+              border: 'none',
+              cursor: 'pointer',
+              transition: 'all var(--transition-fast)'
+            }}
+            onMouseEnter={(e) => {
+              if (!isActive) {
+                e.currentTarget.style.backgroundColor = 'var(--bg-subtle)';
+                e.currentTarget.style.color = 'var(--text-primary)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!isActive) {
+                e.currentTarget.style.backgroundColor = 'transparent';
+                e.currentTarget.style.color = 'var(--text-secondary)';
+              }
+            }}
+          >
+            <Icon
+              size={18}
+              color={isActive ? 'var(--primary)' : 'var(--text-muted)'}
+              strokeWidth={isActive ? 2.2 : 1.8}
+            />
+            {(isMobileDrawer || !isCollapsed) && (
+              <span style={{ flex: 1, textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {item.label}
+              </span>
+            )}
+          </button>
+        );
+
+        if (!isMobileDrawer && isCollapsed) {
+          return (
+            <Tooltip key={item.id} content={item.label} position="right">
+              {buttonElement}
+            </Tooltip>
+          );
+        }
+        return <React.Fragment key={item.id}>{buttonElement}</React.Fragment>;
+      })}
+    </div>
+  );
+
+  return (
+    <>
+      {/* 1. Mobile Off-Canvas Drawer (<768px) */}
+      {isMobileOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Navigation menu"
+          className="tm-mobile-drawer-wrapper"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 150,
+            display: 'flex'
+          }}
+        >
+          {/* Backdrop */}
+          <div
+            style={{
+              position: 'fixed',
+              inset: 0,
+              backgroundColor: 'rgba(15, 23, 42, 0.45)',
+              backdropFilter: 'blur(2px)'
+            }}
+            onClick={onCloseMobile}
+          />
+
+          {/* Drawer Content */}
+          <aside
+            style={{
+              position: 'relative',
+              width: 'min(280px, 85vw)',
+              height: '100%',
+              backgroundColor: '#FFFFFF',
+              borderRight: '1px solid var(--border-default)',
+              display: 'flex',
+              flexDirection: 'column',
+              boxShadow: 'var(--shadow-xl)',
+              zIndex: 10
+            }}
+          >
+            {/* Drawer Header */}
+            <div
+              style={{
+                height: '56px',
+                padding: '0 16px',
+                borderBottom: '1px solid var(--border-default)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontWeight: 800, fontSize: '15px', color: 'var(--text-primary)' }}>
+                  TRUSTMESH
                 </span>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Navigation</span>
               </div>
-              <span
+              <button
+                onClick={onCloseMobile}
+                aria-label="Close navigation"
                 style={{
-                  fontFamily: 'var(--font-mono)',
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: 'var(--radius-sm)',
+                  border: '1px solid var(--border-default)',
+                  backgroundColor: 'var(--bg-subtle)',
                   color: 'var(--text-muted)',
-                  fontSize: '10px'
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
                 }}
               >
-                v2.4.0
-              </span>
+                <X size={16} />
+              </button>
             </div>
-            <div style={{ color: 'var(--text-muted)', fontSize: '11px', lineHeight: 1.2 }}>
-              Split Learning • SecAgg v2.1
+
+            {/* Nav list */}
+            {renderNavList(true)}
+
+            {/* Drawer Footer */}
+            <div style={{ padding: '16px', borderTop: '1px solid var(--border-default)', fontSize: '11px', color: 'var(--text-muted)' }}>
+              Sovereign Federated Risk Workspace
             </div>
-          </div>
-        ) : (
-          <Tooltip content="Node online • v2.4.0" position="right">
-            <div style={{ display: 'flex', justifyContent: 'center' }}>
+          </aside>
+        </div>
+      )}
+
+      {/* 2. Desktop & Tablet Sidebar (>=768px) */}
+      <aside
+        className="tm-sidebar tm-desktop-sidebar"
+        aria-label="Application navigation"
+        style={{
+          width: isCollapsed ? '64px' : '230px',
+          backgroundColor: '#FFFFFF',
+          borderRight: '1px solid var(--border-default)',
+          display: 'flex',
+          flexDirection: 'column',
+          flexShrink: 0,
+          minHeight: 'calc(100vh - 56px)',
+          transition: 'width var(--transition-normal)',
+          zIndex: 30,
+          position: 'relative',
+          userSelect: 'none'
+        }}
+      >
+        {renderNavList(false)}
+
+        {/* Sidebar Footer: Collapse Toggle */}
+        <div
+          style={{
+            padding: '12px',
+            borderTop: '1px solid var(--border-default)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: isCollapsed ? 'center' : 'space-between'
+          }}
+        >
+          {!isCollapsed && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span
                 style={{
-                  width: '8px',
-                  height: '8px',
+                  width: '7px',
+                  height: '7px',
                   borderRadius: '50%',
-                  backgroundColor: quarantinedLender ? 'var(--warning)' : 'var(--success)'
+                  backgroundColor: !backendConnected
+                    ? 'var(--status-warning)'
+                    : (quarantinedLender ? 'var(--status-warning)' : 'var(--status-success)')
                 }}
               />
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 500 }}>
+                {!backendConnected
+                  ? 'Local Standalone'
+                  : (quarantinedLender ? 'Cluster: 2/3 Nodes' : 'Cluster Online')}
+              </span>
             </div>
-          </Tooltip>
-        )}
-      </div>
-    </aside>
+          )}
+          <button
+            onClick={toggleCollapse}
+            aria-label={isCollapsed ? 'Expand sidebar navigation' : 'Collapse sidebar navigation'}
+            style={{
+              width: '28px',
+              height: '28px',
+              borderRadius: 'var(--radius-sm)',
+              border: '1px solid var(--border-default)',
+              backgroundColor: '#FFFFFF',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'var(--text-muted)',
+              cursor: 'pointer',
+              transition: 'all var(--transition-fast)'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--bg-subtle)';
+              e.currentTarget.style.color = 'var(--text-primary)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#FFFFFF';
+              e.currentTarget.style.color = 'var(--text-muted)';
+            }}
+          >
+            {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+          </button>
+        </div>
+      </aside>
+    </>
   );
 }

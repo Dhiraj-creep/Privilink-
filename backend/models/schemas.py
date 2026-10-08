@@ -33,8 +33,8 @@ class CaseActionRequest(BaseModel):
 
 
 class ResolveCaseRequest(BaseModel):
-    task_id: str
-    resolution_notes: str
+    task_id: Optional[str] = None
+    resolution_notes: str = Field(..., min_length=3, description="Compliance clearance rationale")
     actor: Optional[str] = "COMPLIANCE_OFFICER"
     role: Optional[str] = "COMPLIANCE_OFFICER"
 

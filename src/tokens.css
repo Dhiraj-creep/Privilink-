@@ -1,78 +1,125 @@
 /* ==========================================================================
-   TRUSTMESH DESIGN TOKENS
-   Calm, authoritative, precise, trustworthy enterprise fintech & security.
+   TRUSTMESH ENTERPRISE DESIGN TOKENS
+   Pure white foundation, restrained slate typography, multiple semantic accents.
+   Designed for clarity, precision, and low cognitive clutter in financial risk workflows.
    ========================================================================== */
 
 :root {
-  /* Typography */
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: 'JetBrains Mono', 'SFMono-Regular', Consolas, monospace;
+  /* Typography Stacks */
+  --font-heading: 'Manrope', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
 
   /* Typography Scale */
-  --text-xs: 11px;
-  --text-sm: 12px;
+  --text-2xs: 11px;
+  --text-xs: 12px;
+  --text-sm: 13px;
   --text-base: 14px;
-  --text-md: 16px;
-  --text-lg: 20px;
-  --text-xl: 24px;
-  --text-2xl: 32px;
+  --text-md: 15px;
+  --text-lg: 18px;
+  --text-xl: 20px;
+  --text-2xl: 24px;
+  --text-3xl: 30px;
 
-  /* Color Foundations: Neutral Obsidian Carbon (Zero Blue Undertones) */
-  --bg-app: #0B0D0E;             /* Deep Obsidian Carbon */
-  --bg-surface: #131518;         /* Neutral Charcoal Surface */
-  --bg-surface-raised: #181B1F;  /* Raised Surface (Cards, Dropdowns) */
-  --bg-surface-hover: #1F2228;   /* Interactive Hover */
-  --bg-surface-active: #262A30;  /* Active Selection */
+  /* Color Foundations: Warm off-white (#F5F7FB) canvas & Crisp White (#FFFFFF) surfaces */
+  --bg-app: #F5F7FB;              /* Warm Off-White Main Page Canvas */
+  --bg-surface: #FFFFFF;          /* Crisp White Cards & Panels */
+  --bg-surface-raised: #FFFFFF;   /* Raised Surfaces */
+  --bg-subtle: #F0F4F8;           /* Subtle Inset for Grouping / Table Headers */
+  --bg-muted: #EAEFF5;            /* Inset Neutral / Code blocks */
+  --bg-surface-hover: #F8FAFC;    /* Subtle Hover Highlight */
+  --bg-surface-active: #EEF2F6;   /* Active Selection Highlight */
 
   /* Hairline Borders */
-  --border-subtle: #1E2125;
-  --border-default: #282C33;     /* 1px Hairline Default */
-  --border-focus: #10B981;
-  --border-muted: #1A1D21;
+  --border-subtle: #EDF2F7;       /* Inset Divider */
+  --border-default: #E2E8F0;      /* Standard 1px Card & Table Border */
+  --border-medium: #CBD5E1;       /* Control & Input Border */
+  --border-focus: #4F46E5;        /* Focused Element Border */
 
-  /* Text Colors */
-  --text-primary: #F3F4F6;       /* Crisp High Contrast Neutral White */
-  --text-secondary: #9CA3AF;     /* Balanced Neutral Slate */
-  --text-muted: #6B7280;         /* De-emphasized Metadata */
-  --text-inverse: #0B0D0E;
+  /* Text & Readability (WCAG AAA/AA on Warm Canvas & Crisp White) */
+  --text-primary: #14213D;        /* Deep Navy: High-contrast headings and primary labels */
+  --text-secondary: #526078;      /* Slate: Readable secondary text and body copy */
+  --text-muted: #64748B;          /* Slate 500: Auxiliary metadata & column headers */
+  --text-subtle: #94A3B8;         /* Slate 400: Placeholders & disabled states */
+  --text-inverse: #FFFFFF;        /* Contrast on dark buttons/chips */
 
-  /* Brand & Primary: Authentic Emerald Privacy & Security Accent */
-  --primary: #10B981;            /* Emerald */
-  --primary-hover: #059669;
-  --primary-subtle: rgba(16, 185, 129, 0.12);
-  --primary-border: rgba(16, 185, 129, 0.32);
+  /* ACCENT 1: Indigo (Primary Action Color) */
+  --primary: #4F46E5;             /* Indigo 600 */
+  --primary-hover: #4338CA;       /* Indigo 700 */
+  --primary-subtle: #EEF2FF;      /* Indigo 50 Tint */
+  --primary-border: #C7D2FE;      /* Indigo 200 */
+  --primary-text: #3730A3;        /* Indigo 800 */
 
-  /* Secondary Accent (Data / Cryptographic Verified: Sage / Teal) */
-  --accent-cyan: #14B8A6;
-  --accent-cyan-subtle: rgba(20, 184, 166, 0.12);
-  --accent-cyan-border: rgba(20, 184, 166, 0.3);
+  /* ACCENT 2: Teal (Collaboration & Sovereign Node Status) */
+  --accent-teal: #0F766E;         /* Teal 700 */
+  --accent-teal-hover: #115E59;   /* Teal 800 */
+  --accent-teal-subtle: #F0FDFA;  /* Teal 50 Tint */
+  --accent-teal-border: #99F6E4;  /* Teal 200 */
+  --accent-teal-text: #0F766E;    /* Teal 700 */
 
-  /* Semantic Statuses */
-  --success: #10B981;
-  --success-subtle: rgba(16, 185, 129, 0.12);
-  --success-border: rgba(16, 185, 129, 0.3);
+  /* ACCENT 3: Violet (Vertical Federated Intelligence & Model Head) */
+  --accent-violet: #7C3AED;       /* Violet 600 */
+  --accent-violet-hover: #6D28D9; /* Violet 700 */
+  --accent-violet-subtle: #F5F3FF;/* Violet 50 Tint */
+  --accent-violet-border: #DDD6FE;/* Violet 200 */
+  --accent-violet-text: #5B21B6;  /* Violet 800 */
 
-  --warning: #F59E0B;
-  --warning-subtle: rgba(245, 158, 11, 0.12);
-  --warning-border: rgba(245, 158, 11, 0.3);
+  /* ACCENT 4: Green (Success, Verified Integrity, Healthy Node Status) */
+  --status-success: #16A34A;      /* Green 600 */
+  --status-success-hover: #15803D;/* Green 700 */
+  --status-success-subtle: #F0FDF4;/* Green 50 Tint */
+  --status-success-border: #BBF7D0;/* Green 200 */
+  --status-success-text: #14532D; /* Green 900 */
 
-  --danger: #EF4444;
-  --danger-subtle: rgba(239, 68, 68, 0.12);
-  --danger-border: rgba(239, 68, 68, 0.3);
+  /* ACCENT 5: Amber (Warnings, Pending Actions & Reviews) */
+  --status-warning: #B45309;      /* Amber 700 */
+  --status-warning-hover: #92400E;/* Amber 800 */
+  --status-warning-subtle: #FFFBEB;/* Amber 50 Tint */
+  --status-warning-border: #FDE68A;/* Amber 200 */
+  --status-warning-text: #78350F; /* Amber 900 */
 
-  /* Risk Scale (Strict Color Guidance) */
-  --risk-low: #10B981;
-  --risk-medium: #F59E0B;
-  --risk-high: #F97316;
-  --risk-critical: #EF4444;
+  /* ACCENT 6: Red / Danger (Genuine Risk, Failures, Destructive Actions) */
+  --status-danger: #B91C1C;       /* Red 700 */
+  --status-danger-hover: #991B1B; /* Red 800 */
+  --status-danger-subtle: #FEF2F2;/* Red 50 Tint */
+  --status-danger-border: #FECACA;/* Red 200 */
+  --status-danger-text: #7F1D1D;  /* Red 900 */
 
-  /* Colorblind-Safe Chart Palette (Non-blue foundations) */
-  --chart-1: #14B8A6;            /* Teal / Sage */
-  --chart-2: #8B5CF6;            /* Violet / Slate */
-  --chart-3: #F59E0B;            /* Amber */
-  --chart-4: #EF4444;            /* Crimson */
-  --chart-5: #64748B;            /* Neutral Slate */
-  --chart-grid: #20242B;         /* Hairline Chart Grids */
+  /* Semantic Aliases for Legacy Component Compatibility */
+  --success: var(--status-success);
+  --success-subtle: var(--status-success-subtle);
+  --success-border: var(--status-success-border);
+  --success-text: var(--status-success-text);
+
+  --warning: var(--status-warning);
+  --warning-subtle: var(--status-warning-subtle);
+  --warning-border: var(--status-warning-border);
+  --warning-text: var(--status-warning-text);
+
+  --danger: var(--status-danger);
+  --danger-subtle: var(--status-danger-subtle);
+  --danger-border: var(--status-danger-border);
+  --danger-text: var(--status-danger-text);
+
+  --accent-cyan: var(--accent-teal);
+  --accent-cyan-subtle: var(--accent-teal-subtle);
+  --accent-cyan-border: var(--accent-teal-border);
+  --accent-cyan-text: var(--accent-teal-text);
+
+  /* Risk Level Color Palette */
+  --risk-low: var(--status-success);
+  --risk-medium: var(--status-warning);
+  --risk-high: var(--status-danger);
+  --risk-critical: #991B1B;
+
+  /* Chart Visualizer Palette */
+  --chart-1: #4F46E5;             /* Indigo (Collaborative Model) */
+  --chart-2: #0D9488;             /* Teal (Bank A / Participant) */
+  --chart-3: #7C3AED;             /* Violet (Insurer B / Model Head) */
+  --chart-4: #D97706;             /* Amber (Lender C / Alerts) */
+  --chart-5: #DC2626;             /* Red (Anomalies / Poisoning) */
+  --chart-6: #16A34A;             /* Green (Benchmark / Clean) */
+  --chart-grid: #F1F5F9;          /* Light Slate Grid Lines */
 
   /* 8px Spacing Grid */
   --space-0-5: 4px;
@@ -85,30 +132,36 @@
   --space-5: 40px;
   --space-6: 48px;
 
-  /* Radii */
+  /* Border Radii */
   --radius-xs: 4px;
   --radius-sm: 6px;
   --radius-md: 8px;
   --radius-lg: 10px;
-  --radius-xl: 12px;
+  --radius-xl: 14px;
   --radius-full: 9999px;
 
-  /* Elevations */
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 12px -2px rgba(0, 0, 0, 0.45);
-  --shadow-lg: 0 12px 28px -6px rgba(0, 0, 0, 0.6);
+  /* Elevations & Shadows (Subtle, Crisp Enterprise) */
+  --shadow-xs: 0 1px 2px 0 rgba(15, 23, 42, 0.04);
+  --shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.06), 0 1px 2px -1px rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.06), 0 2px 4px -2px rgba(15, 23, 42, 0.04);
+  --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.07), 0 4px 6px -4px rgba(15, 23, 42, 0.04);
 
-  /* Accessibility & Transitions */
-  --focus-ring: 0 0 0 2px var(--bg-app), 0 0 0 4px var(--primary);
+  /* Focus & Transitions */
+  --focus-ring: 0 0 0 2px #FFFFFF, 0 0 0 4px var(--primary);
   --transition-fast: 120ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-normal: 180ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Base Reset & Tabular Nums */
+/* Base Reset */
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+}
+
+html {
+  font-size: 14px;
+  background-color: var(--bg-app);
 }
 
 body {
@@ -122,19 +175,29 @@ body {
   overflow-x: hidden;
 }
 
-/* Global Tabular Figures for Financial / Cryptographic Precision */
-.tabular-nums, code, pre, th, td, [data-mono] {
-  font-family: var(--font-mono);
+/* Typography Rules: Table headers and cells use SANS-SERIF font */
+th, td {
+  font-family: var(--font-sans);
+}
+
+/* Numeric alignment: Use tabular figures on numbers */
+.tabular-nums, [data-tabular] {
   font-variant-numeric: tabular-nums;
 }
 
+/* Code, cryptographic hashes, and identifiers use MONOSPACE font */
+code, pre, .font-mono, [data-mono] {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+}
+
 /* Accessibility Focus States */
-button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible {
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
   outline: none;
   box-shadow: var(--focus-ring);
 }
 
-/* Scrollbars */
+/* Crisp Clean Scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -143,36 +206,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   background: var(--bg-app);
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--border-default);
-  border-radius: var(--radius-sm);
+  background: var(--border-medium);
+  border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-muted);
 }
-
-/* Animations */
-@keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(2px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-/* Respect Reduced Motion */
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
-}
-

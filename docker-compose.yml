@@ -1,0 +1,80 @@
+services:
+  coordinator:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: trustmesh-coordinator
+    ports:
+      - "8000:8000"
+    environment:
+      - TRUSTMESH_ENV=production
+      - TRUSTMESH_MODE=distributed
+      - TRUSTMESH_SECRET_KEY=trustmesh-production-strong-security-key-2026-vfl
+      - TRUSTMESH_ALLOW_DEMO_SHORTCUTS=false
+      - INTERNAL_SERVICE_KEY=trustmesh-internal-node-secret-2026
+      - BANK_A_URL=http://bank-a:8001
+      - INSURER_B_URL=http://insurer-b:8002
+      - LENDER_C_URL=http://lender-c:8003
+      - CORS_ORIGINS=http://localhost:5173,http://localhost:80,http://127.0.0.1:5173
+    volumes:
+      # SOVEREIGN BOUNDARY: Coordinator ONLY has access to its own state and ledger
+      - ./data_store/coordinator:/app/data_store/coordinator
+    depends_on:
+      - bank-a
+      - insurer-b
+      - lender-c
+
+  bank-a:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: trustmesh-node-bank-a
+    command: ["python", "backend/run_nodes.py", "BANK_A"]
+    ports:
+      - "8001:8001"
+    environment:
+      - INTERNAL_SERVICE_KEY=trustmesh-internal-node-secret-2026
+      - BANK_A_PORT=8001
+    volumes:
+      # SOVEREIGN BOUNDARY: Bank A maintains custody of its own proprietary database
+      - ./data_store/nodes/bank_a:/app/data_store/nodes/bank_a
+
+  insurer-b:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: trustmesh-node-insurer-b
+    command: ["python", "backend/run_nodes.py", "INSURER_B"]
+    ports:
+      - "8002:8002"
+    environment:
+      - INTERNAL_SERVICE_KEY=trustmesh-internal-node-secret-2026
+      - INSURER_B_PORT=8002
+    volumes:
+      # SOVEREIGN BOUNDARY: Insurer B maintains custody of its own proprietary database
+      - ./data_store/nodes/insurer_b:/app/data_store/nodes/insurer_b
+
+  lender-c:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: trustmesh-node-lender-c
+    command: ["python", "backend/run_nodes.py", "LENDER_C"]
+    ports:
+      - "8003:8003"
+    environment:
+      - INTERNAL_SERVICE_KEY=trustmesh-internal-node-secret-2026
+      - LENDER_C_PORT=8003
+    volumes:
+      # SOVEREIGN BOUNDARY: Lender C maintains custody of its own proprietary database
+      - ./data_store/nodes/lender_c:/app/data_store/nodes/lender_c
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: trustmesh-frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - coordinator

@@ -7,6 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "oxlint",
+    "test:utils": "node tests/test_frontend_utils.mjs",
+    "test:browser": "node tests/test_browser_workflow.mjs",
+    "test": "node tests/test_frontend_utils.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

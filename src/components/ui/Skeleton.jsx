@@ -10,15 +10,12 @@ export function Skeleton({
 }) {
   return (
     <div
-      className={`tm-skeleton ${className}`}
+      className={`tm-skeleton animate-pulse ${className}`}
       style={{
         width,
         height,
         borderRadius,
-        backgroundColor: 'var(--bg-surface-raised)',
-        backgroundImage: 'linear-gradient(90deg, var(--bg-surface-raised) 0%, var(--bg-surface-hover) 50%, var(--bg-surface-raised) 100%)',
-        backgroundSize: '200% 100%',
-        animation: 'shimmer 1.5s infinite linear',
+        backgroundColor: '#F1F5F9',
         display: 'inline-block',
         ...style
       }}

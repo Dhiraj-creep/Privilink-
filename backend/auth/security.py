@@ -189,18 +189,26 @@ def get_user_by_username(username: str) -> Optional[Dict[str, Any]]:
 def verify_institution_boundary_access(user: Dict[str, Any], requested_institution_id: str) -> Tuple[bool, Optional[str]]:
     """
     Strict server-enforced boundary check.
-    If user is an INSTITUTION_ADMIN, they can ONLY access their own institution.
-    Returns (allowed: bool, error_message: Optional[str]).
+    Raw records of a sovereign institution can ONLY be accessed by that institution's
+    designated INSTITUTION_ADMIN (or NETWORK_ADMIN for infrastructure maintenance).
+    All other roles (RISK_ANALYST, COMPLIANCE_OFFICER, cross-institution admins) are strictly rejected with HTTP 403.
     """
     user_role = user.get("role")
     user_inst = user.get("institution_id")
 
-    # Global roles can view metadata, but institution admins are restricted
-    if user_role == "INSTITUTION_ADMIN":
-        if user_inst != requested_institution_id:
-            return False, (
-                f"403 Forbidden: Institutional Boundary Violation. Admin for {user_inst} "
-                f"cannot access sovereign private data of {requested_institution_id}."
-            )
+    if user_role == "NETWORK_ADMIN":
+        return True, None
 
-    return True, None
+    if user_role == "INSTITUTION_ADMIN":
+        if user_inst == requested_institution_id:
+            return True, None
+        return False, (
+            f"403 Forbidden: Institutional Boundary Violation. Admin for {user_inst} "
+            f"cannot access sovereign private data of {requested_institution_id}."
+        )
+
+    return False, (
+        f"403 Forbidden: Institutional Privacy Enforcement. Sovereign raw customer records "
+        f"of {requested_institution_id} are not accessible to role '{user_role}'. "
+        f"Only authorized institution administrators have raw data custody."
+    )

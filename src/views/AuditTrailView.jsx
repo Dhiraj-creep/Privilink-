@@ -1,16 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Search, 
-  Lock, 
   Copy,
   ShieldCheck,
   AlertTriangle,
   RotateCcw,
   FlaskConical,
-  Database
+  Database,
+  CheckCircle2,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react';
+import { Card } from '../components/ui/Card';
+import { Badge } from '../components/ui/Badge';
+import { Button } from '../components/ui/Button';
 import { INITIAL_AUDIT_LOGS } from '../data/syntheticData';
 import { api } from '../api/client';
+import { shortenHash, formatDateTime } from '../utils/formatters';
 
 export default function AuditTrailView({ dynamicLogs = [] }) {
   const [auditMode, setAuditMode] = useState('operational'); // 'operational' | 'sandbox'
@@ -19,6 +25,7 @@ export default function AuditTrailView({ dynamicLogs = [] }) {
   const [copiedHash, setCopiedHash] = useState(null);
   const [backendLogs, setBackendLogs] = useState([]);
   const [sandboxLogs, setSandboxLogs] = useState([]);
+  const [expandedRow, setExpandedRow] = useState(null);
   const [verificationResult, setVerificationResult] = useState(null);
   const [isVerifying, setIsVerifying] = useState(false);
   const [tamperedState, setTamperedState] = useState(false);
@@ -28,19 +35,7 @@ export default function AuditTrailView({ dynamicLogs = [] }) {
       api.getAuditLogs()
         .then(data => {
           if (Array.isArray(data) && data.length > 0) {
-            const formatted = data.map(l => ({
-              id: l.event_id,
-              timestamp: l.timestamp.includes('T') ? l.timestamp.split('T')[1].split('.')[0] : l.timestamp,
-              date: l.timestamp.includes('T') ? l.timestamp.split('T')[0] : '2026-09-26',
-              event: l.details || l.action,
-              institution: l.institution,
-              privacyStatus: l.privacy_status,
-              result: l.result,
-              hash: l.hash ? `${l.hash.slice(0, 6)}...${l.hash.slice(-4)}` : '0x...',
-              fullHash: l.hash,
-              prevHash: l.prev_hash
-            }));
-            setBackendLogs(formatted);
+            setBackendLogs(data);
           }
         })
         .catch(() => {});
@@ -48,19 +43,7 @@ export default function AuditTrailView({ dynamicLogs = [] }) {
       api.getSandboxLogs()
         .then(data => {
           if (Array.isArray(data) && data.length > 0) {
-            const formatted = data.map(l => ({
-              id: l.event_id,
-              timestamp: l.timestamp.includes('T') ? l.timestamp.split('T')[1].split('.')[0] : l.timestamp,
-              date: l.timestamp.includes('T') ? l.timestamp.split('T')[0] : '2026-09-26',
-              event: l.details || l.action,
-              institution: l.institution,
-              privacyStatus: l.privacy_status,
-              result: l.result,
-              hash: l.hash ? `${l.hash.slice(0, 6)}...${l.hash.slice(-4)}` : '0x...',
-              fullHash: l.hash,
-              prevHash: l.prev_hash
-            }));
-            setSandboxLogs(formatted);
+            setSandboxLogs(data);
           }
         })
         .catch(() => {});
@@ -76,10 +59,16 @@ export default function AuditTrailView({ dynamicLogs = [] }) {
     : (sandboxLogs.length > 0 ? sandboxLogs : backendLogs.slice(0, 5));
 
   const filteredLogs = activeRawLogs.filter(log => {
-    const matchesInst = filterInst === 'ALL' || log.institution.includes(filterInst);
-    const matchesSearch = log.event.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          log.result.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          log.id.toLowerCase().includes(searchTerm.toLowerCase());
+    const inst = log.institution || '';
+    const matchesInst = filterInst === 'ALL' || inst.includes(filterInst);
+    const s = searchTerm.toLowerCase();
+    const matchesSearch = !searchTerm ||
+      (log.event_id || log.id || '').toLowerCase().includes(s) ||
+      (log.action || log.event || '').toLowerCase().includes(s) ||
+      (log.details || '').toLowerCase().includes(s) ||
+      (log.actor || '').toLowerCase().includes(s) ||
+      (log.hash || '').toLowerCase().includes(s);
+
     return matchesInst && matchesSearch;
   });
 
@@ -91,6 +80,7 @@ export default function AuditTrailView({ dynamicLogs = [] }) {
 
   const handleVerifyChain = async () => {
     setIsVerifying(true);
+    setVerificationResult(null);
     try {
       const res = auditMode === 'operational' 
         ? await api.verifyAuditChain() 
@@ -99,31 +89,22 @@ export default function AuditTrailView({ dynamicLogs = [] }) {
     } catch (err) {
       setVerificationResult({
         valid: false,
-        broken_index: null,
-        error: `Verification Request Failed: ${err.message}`,
-        message: 'Cryptographic chain verification could not complete.'
+        unavailable: true,
+        error: err.message || 'Audit verification endpoint unreachable. Cannot verify chain state.'
       });
     } finally {
       setIsVerifying(false);
     }
   };
 
-  const handleSimulateTamper = async () => {
+  const handleTamperSandbox = async () => {
     try {
-      if (auditMode !== 'sandbox') {
-        setAuditMode('sandbox');
-      }
-      await api.simulateSandboxTamper(1);
+      await api.tamperSandboxAudit();
       setTamperedState(true);
       fetchLogs('sandbox');
-      const res = await api.verifySandboxAudit();
-      setVerificationResult(res);
+      handleVerifyChain();
     } catch (err) {
-      setVerificationResult({
-        valid: false,
-        broken_index: null,
-        error: `Tampering Simulation Blocked: ${err.message}. Switch persona to Compliance Officer or Network Admin.`
-      });
+      console.error('Tamper injection failed', err);
     }
   };
 
@@ -131,345 +112,285 @@ export default function AuditTrailView({ dynamicLogs = [] }) {
     try {
       await api.resetSandboxAudit();
       setTamperedState(false);
+      setVerificationResult(null);
       fetchLogs('sandbox');
-      const res = await api.verifySandboxAudit();
-      setVerificationResult(res);
     } catch (err) {
-      setVerificationResult({
-        valid: false,
-        broken_index: null,
-        error: `Reset failed: ${err.message}`
-      });
+      console.error('Sandbox reset failed', err);
     }
   };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
-      {/* Title & Mode Switcher */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
+      {/* Page Header */}
+      <div className="tm-page-header">
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <h1 style={{ fontSize: '1.45rem', fontWeight: 700, color: 'var(--primary-dark)' }}>
-              Cryptographic Audit Trail & Compliance Ledger
-            </h1>
-            <span className={`badge ${auditMode === 'operational' ? 'badge-success' : 'badge-warning'}`}>
-              {auditMode === 'operational' ? 'Operational SHA-256 Chain' : 'Disposable Sandbox Lab'}
-            </span>
-          </div>
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
-            {auditMode === 'operational' 
-              ? 'Real-time immutable ledger of operational system events. Every block is bound by 64-char SHA-256 hashes.' 
-              : 'Isolated evaluator sandbox. Deliberately modify blocks to prove that hash chain severing is mathematically detected without corrupting live operational history.'}
+          <h1 className="tm-page-title">Tamper-Evident SHA-256 Audit Ledger</h1>
+          <p className="tm-page-desc">
+            Canonical sorted UTF-8 JSON serialization cryptographically linked to the previous block from Genesis.
           </p>
         </div>
 
-        {/* Ledger Mode Selector & Actions */}
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-          <div style={{
-            display: 'flex',
-            backgroundColor: 'var(--bg-subtle)',
-            padding: '3px',
-            borderRadius: 'var(--radius-sm)',
-            border: '1px solid var(--border-light)'
-          }}>
-            <button
-              onClick={() => {
-                setAuditMode('operational');
-                setVerificationResult(null);
-                setTamperedState(false);
-              }}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '5px 11px',
-                fontSize: '0.735rem',
-                fontWeight: 600,
-                borderRadius: 'var(--radius-sm)',
-                border: 'none',
-                cursor: 'pointer',
-                backgroundColor: auditMode === 'operational' ? 'var(--primary-dark)' : 'transparent',
-                color: auditMode === 'operational' ? '#F8FAFC' : 'var(--text-secondary)',
-                transition: 'all 0.15s ease'
-              }}
-            >
-              <Database size={12} />
-              <span>Operational Ledger</span>
-            </button>
-            <button
-              onClick={() => {
-                setAuditMode('sandbox');
-                setVerificationResult(null);
-              }}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '5px 11px',
-                fontSize: '0.735rem',
-                fontWeight: 600,
-                borderRadius: 'var(--radius-sm)',
-                border: 'none',
-                cursor: 'pointer',
-                backgroundColor: auditMode === 'sandbox' ? 'var(--primary-dark)' : 'transparent',
-                color: auditMode === 'sandbox' ? '#F8FAFC' : 'var(--text-secondary)',
-                transition: 'all 0.15s ease'
-              }}
-            >
-              <FlaskConical size={12} />
-              <span>Tamper Sandbox Lab</span>
-            </button>
-          </div>
-
-          <button
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <Button
+            variant="primary"
             onClick={handleVerifyChain}
-            disabled={isVerifying}
-            className="btn btn-primary btn-sm"
+            loading={isVerifying}
+            icon={<ShieldCheck size={14} />}
           >
-            <ShieldCheck size={14} />
-            <span>{isVerifying ? 'Verifying Chain...' : `Verify ${auditMode === 'operational' ? 'Ledger' : 'Sandbox'}`}</span>
-          </button>
-
-          {auditMode === 'sandbox' ? (
-            !tamperedState ? (
-              <button
-                onClick={handleSimulateTamper}
-                className="btn btn-secondary btn-sm"
-                title="Deliberately modifies an event in sandbox to demonstrate tamper detection"
-              >
-                <AlertTriangle size={13} color="var(--warning-text)" />
-                <span>Simulate Sandbox Tampering</span>
-              </button>
-            ) : (
-              <button
-                onClick={handleResetSandbox}
-                className="btn btn-secondary btn-sm"
-              >
-                <RotateCcw size={13} />
-                <span>Reset Sandbox Snapshot</span>
-              </button>
-            )
-          ) : (
-            <button
-              onClick={handleSimulateTamper}
-              className="btn btn-secondary btn-sm"
-              title="Switches to sandbox and demonstrates cryptographic break"
-            >
-              <AlertTriangle size={13} color="var(--warning-text)" />
-              <span>Simulate Tampering (Sandbox)</span>
-            </button>
-          )}
+            Verify Chain Integrity
+          </Button>
         </div>
       </div>
 
-      {/* Mode Information Callout */}
-      {auditMode === 'sandbox' && (
-        <div style={{
-          padding: '12px 16px',
-          borderRadius: 'var(--radius-md)',
-          backgroundColor: 'rgba(217, 119, 6, 0.08)',
-          border: '1px solid rgba(217, 119, 6, 0.25)',
-          fontSize: '0.765rem',
-          color: 'var(--text-primary)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px'
-        }}>
-          <FlaskConical size={16} color="var(--warning-text)" style={{ flexShrink: 0 }} />
-          <div>
-            <strong>Disposable Evaluation Sandbox:</strong> Modifications here demonstrate cryptographic hash chain failure without altering permanent operational records.
-          </div>
-        </div>
-      )}
-
-      {/* Verification Result Banner */}
+      {/* Verification Result Banner (if run) */}
       {verificationResult && (
         <div style={{
-          padding: '14px 18px',
+          padding: '16px 20px',
           borderRadius: 'var(--radius-md)',
-          backgroundColor: verificationResult.valid ? 'var(--success-light)' : 'var(--danger-light)',
-          border: verificationResult.valid ? '1px solid var(--success-border)' : '1px solid var(--danger-border)',
+          backgroundColor: verificationResult.valid
+            ? 'var(--status-success-subtle)'
+            : (verificationResult.unavailable ? 'var(--status-warning-subtle)' : 'var(--status-danger-subtle)'),
+          border: `1.5px solid ${
+            verificationResult.valid
+              ? 'var(--status-success-border)'
+              : (verificationResult.unavailable ? 'var(--status-warning-border)' : 'var(--status-danger-border)')
+          }`,
+          color: verificationResult.valid
+            ? 'var(--status-success-text)'
+            : (verificationResult.unavailable ? 'var(--status-warning-text)' : 'var(--status-danger-text)'),
           display: 'flex',
-          alignItems: 'center',
+          alignItems: 'flex-start',
           justifyContent: 'space-between',
-          fontSize: '0.825rem'
+          gap: '14px'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
             {verificationResult.valid ? (
-              <ShieldCheck size={20} color="var(--success)" />
+              <CheckCircle2 size={20} color="var(--status-success)" style={{ flexShrink: 0, marginTop: '2px' }} />
+            ) : verificationResult.unavailable ? (
+              <AlertTriangle size={20} color="var(--status-warning)" style={{ flexShrink: 0, marginTop: '2px' }} />
             ) : (
-              <AlertTriangle size={20} color="var(--danger)" />
+              <AlertTriangle size={20} color="var(--status-danger)" style={{ flexShrink: 0, marginTop: '2px' }} />
             )}
             <div>
-              <strong style={{ color: verificationResult.valid ? 'var(--success-text)' : 'var(--danger-text)' }}>
-                {verificationResult.valid 
-                  ? (auditMode === 'operational' ? 'OPERATIONAL CRYPTOGRAPHIC AUDIT INTEGRITY CONFIRMED' : 'SANDBOX LEDGER INTEGRITY VERIFIED')
-                  : 'CRYPTOGRAPHIC TAMPERING DETECTED!'}
+              <strong style={{ fontSize: '14px' }}>
+                {verificationResult.valid
+                  ? `All ${verificationResult.total_events || activeRawLogs.length} Blocks Cryptographically Verified`
+                  : (verificationResult.unavailable
+                    ? 'Verification Service Unavailable (Backend Disconnected)'
+                    : 'Cryptographic Chain Broken (Tamper Detected)')}
               </strong>
-              <p style={{ color: verificationResult.valid ? 'var(--success-text)' : 'var(--danger-text)', fontSize: '0.765rem', marginTop: '2px' }}>
-                {verificationResult.message || verificationResult.error}
+              <p style={{ fontSize: '12px', marginTop: '2px', lineHeight: 1.45 }}>
+                {verificationResult.valid
+                  ? `Every linked block from Genesis (Block #0) to Head matches its canonical SHA-256 hash. Zero unauthorized modifications detected across ${verificationResult.total_events || activeRawLogs.length} events.`
+                  : (verificationResult.unavailable
+                    ? (verificationResult.error || 'The cryptographic verification endpoint is currently unreachable. Ledger state cannot be validated.')
+                    : (verificationResult.error || `Hash severance detected at Block #${verificationResult.broken_index}. Subsequent SHA-256 signatures invalid.`))}
               </p>
             </div>
           </div>
-          <span style={{ fontSize: '0.725rem', fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>
-            Verified {activeRawLogs.length} Blocks
-          </span>
+          <button
+            onClick={() => setVerificationResult(null)}
+            style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', fontWeight: 'bold' }}
+            aria-label="Dismiss verification banner"
+          >
+            ✕
+          </button>
         </div>
       )}
 
-      {/* Filter and Search Bar */}
-      <div className="card" style={{ padding: '16px 22px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-            <div style={{ position: 'relative', width: '270px' }}>
-              <Search size={14} style={{ position: 'absolute', left: '12px', top: '11px', color: 'var(--text-muted)' }} />
-              <input 
+      {/* Mode Switcher: Operational vs Sandbox */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+        <div className="tm-tabs-nav">
+          <button
+            onClick={() => { setAuditMode('operational'); setVerificationResult(null); }}
+            className={`tm-tab-button ${auditMode === 'operational' ? 'active' : ''}`}
+          >
+            <Database size={12} style={{ display: 'inline', marginRight: '5px' }} />
+            Live Operational Ledger
+          </button>
+          <button
+            onClick={() => { setAuditMode('sandbox'); setVerificationResult(null); }}
+            className={`tm-tab-button ${auditMode === 'sandbox' ? 'active' : ''}`}
+          >
+            <FlaskConical size={12} style={{ display: 'inline', marginRight: '5px' }} />
+            Tamper Sandbox Lab
+          </button>
+        </div>
+
+        {auditMode === 'sandbox' && (
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={handleTamperSandbox}
+              disabled={tamperedState}
+            >
+              Simulate Tamper Attack (Block #1)
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleResetSandbox}
+              icon={<RotateCcw size={12} />}
+            >
+              Reset Sandbox
+            </Button>
+          </div>
+        )}
+      </div>
+
+      {/* Filter & Search Bar */}
+      <Card style={{ padding: '14px 20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+            <div style={{ position: 'relative', width: '280px' }}>
+              <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+              <input
                 type="text"
-                placeholder="Search audit events, results..."
+                placeholder="Search event ID, action, actor, hash..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '8px 12px 8px 34px',
-                  fontSize: '0.785rem',
-                  border: '1px solid var(--border-medium)',
-                  borderRadius: 'var(--radius-sm)',
-                  outline: 'none'
-                }}
+                style={{ width: '100%', paddingLeft: '32px', height: '34px', fontSize: '12px' }}
               />
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.775rem' }}>
-              <span style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>Node:</span>
-              {['ALL', 'BANK', 'INSURER', 'LENDER', 'TRUSTMESH'].map(inst => (
-                <button
-                  key={inst}
-                  onClick={() => setFilterInst(inst)}
-                  className={`btn btn-sm ${filterInst === inst ? 'btn-primary' : 'btn-outline'}`}
-                  style={{ padding: '4px 10px', fontSize: '0.725rem' }}
-                >
-                  {inst}
-                </button>
-              ))}
-            </div>
+            <select
+              value={filterInst}
+              onChange={(e) => setFilterInst(e.target.value)}
+              style={{ height: '34px', fontSize: '12px' }}
+            >
+              <option value="ALL">All Institutions</option>
+              <option value="Bank">Bank A Only</option>
+              <option value="Insurer">Insurer B Only</option>
+              <option value="Lender">Lender C Only</option>
+              <option value="Network">TRUSTMESH Network</option>
+            </select>
           </div>
 
-          <div style={{ fontSize: '0.765rem', color: 'var(--text-secondary)' }}>
-            Showing <strong>{filteredLogs.length}</strong> audited events ({auditMode})
+          <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+            Showing <strong>{filteredLogs.length}</strong> chained events
           </div>
         </div>
-      </div>
+      </Card>
 
-      {/* Main Table */}
-      <div className="card">
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem', textAlign: 'left' }}>
-            <thead style={{ backgroundColor: 'var(--bg-subtle)', borderBottom: '1px solid var(--border-light)' }}>
+      {/* Chained Events Table */}
+      <Card style={{ padding: 0 }}>
+        <div className="tm-table-container" style={{ border: 'none' }}>
+          <table className="tm-table">
+            <thead>
               <tr>
-                <th style={{ padding: '13px 18px', fontWeight: 600 }}>Timestamp</th>
-                <th style={{ padding: '13px 18px', fontWeight: 600 }}>Event Description</th>
-                <th style={{ padding: '13px 18px', fontWeight: 600 }}>Originating Node</th>
-                <th style={{ padding: '13px 18px', fontWeight: 600 }}>Privacy Status</th>
-                <th style={{ padding: '13px 18px', fontWeight: 600 }}>Verification Result</th>
-                <th style={{ padding: '13px 18px', fontWeight: 600 }}>Integrity Hash (SHA-256)</th>
+                <th style={{ width: '40px' }}></th>
+                <th>Block ID</th>
+                <th>Timestamp</th>
+                <th>Actor / Role</th>
+                <th>Action & Target</th>
+                <th>Institution</th>
+                <th>SHA-256 Hash</th>
+                <th>Status</th>
               </tr>
             </thead>
             <tbody>
-              {filteredLogs.map((log, idx) => {
-                const isFlagged = log.result.includes('Flagged') || log.result.includes('Anomalous') || log.result.includes('Quarantined');
-                const isTampered = log.event.includes('UNAUTHORIZED') || log.event.includes('MALICIOUS');
+              {filteredLogs.map((log, index) => {
+                const eventId = log.event_id || log.id || `LOG-${index}`;
+                const fullHash = log.fullHash || log.hash || '—';
+                const isExpanded = expandedRow === eventId;
+
                 return (
-                  <tr key={idx} style={{ 
-                    borderBottom: '1px solid var(--border-light)',
-                    backgroundColor: isTampered ? 'rgba(182, 74, 69, 0.06)' : 'transparent'
-                  }}>
-                    <td style={{ padding: '13px 18px', fontFamily: 'var(--font-mono)', fontSize: '0.765rem' }}>
-                      <span style={{ fontWeight: 600, color: 'var(--primary-dark)' }}>{log.timestamp}</span>
-                      <div style={{ color: 'var(--text-muted)', fontSize: '0.675rem' }}>{log.date || '2026-09-26'}</div>
-                    </td>
+                  <React.Fragment key={eventId}>
+                    <tr
+                      style={{ cursor: 'pointer', backgroundColor: isExpanded ? 'var(--bg-subtle)' : undefined }}
+                      onClick={() => setExpandedRow(isExpanded ? null : eventId)}
+                    >
+                      <td>
+                        {isExpanded ? <ChevronDown size={14} color="var(--primary)" /> : <ChevronRight size={14} color="var(--text-muted)" />}
+                      </td>
+                      <td style={{ fontWeight: 700, color: 'var(--primary)' }}>
+                        {eventId}
+                      </td>
+                      <td style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                        {formatDateTime(log.timestamp)}
+                      </td>
+                      <td>
+                        <strong style={{ fontSize: '12px', color: 'var(--text-primary)' }}>{log.actor || 'SYSTEM'}</strong>
+                        <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{log.role || 'CORE'}</div>
+                      </td>
+                      <td>
+                        <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                          {log.action || log.event || 'OPERATION'}
+                        </div>
+                        <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                          {log.details || log.target_id || ''}
+                        </div>
+                      </td>
+                      <td>
+                        <Badge variant="teal" size="sm">
+                          {log.institution ? (log.institution.includes('Bank') ? 'Bank A' : (log.institution.includes('Insurer') ? 'Insurer B' : (log.institution.includes('Lender') ? 'Lender C' : 'Network'))) : 'Network'}
+                        </Badge>
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <code style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                            {shortenHash(fullHash, 6, 4)}
+                          </code>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCopy(fullHash);
+                            }}
+                            title="Copy full 64-char SHA-256 hash"
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: copiedHash === fullHash ? 'var(--status-success)' : 'var(--text-muted)', padding: '2px' }}
+                          >
+                            <Copy size={12} />
+                          </button>
+                        </div>
+                      </td>
+                      <td>
+                        <Badge variant={log.result === 'Success' || !log.result?.includes('Quarantined') ? 'success' : 'danger'} size="sm">
+                          {log.result || 'Success'}
+                        </Badge>
+                      </td>
+                    </tr>
 
-                    <td style={{ padding: '13px 18px', fontWeight: 500, color: isTampered ? 'var(--danger-text)' : 'var(--text-primary)' }}>
-                      {log.event}
-                      {isTampered && (
-                        <span className="badge badge-danger" style={{ marginLeft: '8px', fontSize: '0.62rem' }}>
-                          TAMPERED PAYLOAD
-                        </span>
-                      )}
-                    </td>
+                    {/* Expandable Row: Canonical JSON Payload & Prev Hash */}
+                    {isExpanded && (
+                      <tr style={{ backgroundColor: 'var(--bg-subtle)' }}>
+                        <td colSpan={8} style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-default)' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                                Cryptographic Chaining Details
+                              </span>
+                              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                                SHA-256 Digest (64 Hex Characters)
+                              </span>
+                            </div>
 
-                    <td style={{ padding: '13px 18px', fontSize: '0.775rem' }}>
-                      <span style={{
-                        padding: '3px 9px',
-                        borderRadius: 'var(--radius-sm)',
-                        backgroundColor: 'var(--bg-subtle)',
-                        border: '1px solid var(--border-light)',
-                        fontWeight: 600,
-                        color: 'var(--primary-dark)'
-                      }}>
-                        {log.institution}
-                      </span>
-                    </td>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))', gap: '10px' }}>
+                              <div style={{ padding: '10px', backgroundColor: '#FFFFFF', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-default)' }}>
+                                <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600 }}>PREVIOUS BLOCK HASH (prev_hash):</div>
+                                <code style={{ fontSize: '11px', wordBreak: 'break-all', color: 'var(--text-secondary)', display: 'block', marginTop: '2px' }}>
+                                  {log.prev_hash || log.prevHash || '0000000000000000000000000000000000000000000000000000000000000000'}
+                                </code>
+                              </div>
 
-                    <td style={{ padding: '13px 18px' }}>
-                      <span className="badge badge-success" style={{ gap: '4px' }}>
-                        <Lock size={10} />
-                        {log.privacyStatus}
-                      </span>
-                    </td>
-
-                    <td style={{ padding: '13px 18px' }}>
-                      <span className={`badge ${isFlagged || isTampered ? 'badge-warning' : 'badge-success'}`}>
-                        {log.result}
-                      </span>
-                    </td>
-
-                    <td style={{ padding: '13px 18px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <code style={{
-                          fontFamily: 'var(--font-mono)',
-                          fontSize: '0.715rem',
-                          backgroundColor: 'var(--bg-subtle)',
-                          padding: '3px 7px',
-                          borderRadius: '4px',
-                          color: 'var(--text-primary)',
-                          border: isTampered ? '1px solid var(--danger-border)' : '1px solid var(--border-light)'
-                        }}>
-                          {log.hash}
-                        </code>
-                        <button
-                          onClick={() => handleCopy(log.fullHash)}
-                          title="Copy Full 64-character SHA-256 Hash"
-                          style={{
-                            padding: '3px',
-                            color: copiedHash === log.fullHash ? 'var(--success)' : 'var(--text-muted)',
-                            cursor: 'pointer',
-                            background: 'none',
-                            border: 'none'
-                          }}
-                        >
-                          <Copy size={13} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
+                              <div style={{ padding: '10px', backgroundColor: '#FFFFFF', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-default)' }}>
+                                <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600 }}>CURRENT BLOCK HASH (hash):</div>
+                                <code style={{ fontSize: '11px', wordBreak: 'break-all', color: 'var(--primary)', display: 'block', marginTop: '2px' }}>
+                                  {fullHash}
+                                </code>
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
                 );
               })}
             </tbody>
           </table>
         </div>
-      </div>
-
-      {/* Scope Disclaimer on Audit Chain */}
-      <div style={{
-        padding: '14px 18px',
-        backgroundColor: 'var(--bg-subtle)',
-        borderRadius: 'var(--radius-md)',
-        border: '1px solid var(--border-light)',
-        fontSize: '0.735rem',
-        color: 'var(--text-secondary)'
-      }}>
-        <strong>Regulatory Notice:</strong> The SHA-256 audit ledger provides cryptographic tamper-evidence. Each block commits to the hash of the preceding event. A cryptographic hash chain alone does not prevent a privileged administrative actor from rewriting an entire database; in production, block hashes are committed periodically to an external decentralized timestamping authority or read-only WORM storage.
-      </div>
+      </Card>
     </div>
   );
 }

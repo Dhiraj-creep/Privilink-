@@ -1,43 +1,59 @@
 import React, { useState } from 'react';
 import { 
   AlertTriangle, 
-  Lock, 
-  EyeOff, 
-  CheckCircle2, 
   ArrowLeft,
   Send,
   FileCheck2,
-  Clock
+  Clock,
+  CheckCircle2,
+  ShieldCheck,
+  Lock,
+  Sparkles
 } from 'lucide-react';
+import { Card } from '../components/ui/Card';
+import { Badge } from '../components/ui/Badge';
+import { Button } from '../components/ui/Button';
+import { Modal } from '../components/ui/Modal';
 import { RISK_CASES } from '../data/syntheticData';
+import { getRiskVariant, getStatusVariant, formatRiskScore } from '../utils/formatters';
 
 export default function CustomerInvestigationView({ 
   caseData = RISK_CASES[0], 
+  currentRole = 'RISK_ANALYST',
   onBack,
   onTriggerVerification,
   onResolveVerification
 }) {
+  const [activeTab, setActiveTab] = useState('evidence'); // 'evidence' | 'disclosure' | 'audit'
   const [localTriggered, setLocalTriggered] = useState(false);
   const [showResolveModal, setShowResolveModal] = useState(false);
-  const [resolveNotes, setResolveNotes] = useState('Customer submitted proof of payroll deposit regularity and policy verification.');
+  const [resolveNotes, setResolveNotes] = useState('Customer submitted proof of payroll regularity and validated insurance policy.');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
-  const [actionSuccessMsg, setActionSuccessMsg] = useState(null);
+  const [successMsg, setSuccessMsg] = useState(null);
 
   const c = caseData || RISK_CASES[0];
+
   const isVerificationActive = c.status === 'VERIFICATION_REQUESTED' || localTriggered;
   const isResolved = c.status === 'RESOLVED';
+  const riskProps = getRiskVariant(c.riskLevel);
+  const statusProps = getStatusVariant(c.status);
+  const scoreVal = c.score !== undefined ? c.score : c.confidence;
+
+  const canTrigger = (currentRole === 'RISK_ANALYST' || currentRole === 'NETWORK_ADMIN') && !isResolved && !isVerificationActive;
+  const canResolve = (currentRole === 'COMPLIANCE_OFFICER' || currentRole === 'NETWORK_ADMIN') && isVerificationActive && !isResolved;
 
   const handleTrigger = async () => {
+    if (isSubmitting) return;
     setIsSubmitting(true);
     setErrorMsg(null);
-    setActionSuccessMsg(null);
+    setSuccessMsg(null);
     try {
       if (onTriggerVerification) {
         await onTriggerVerification(c.id);
       }
       setLocalTriggered(true);
-      setActionSuccessMsg(`Step-Up KYC verification dispatched for ${c.id}. Persistent investigation task created.`);
+      setSuccessMsg(`Step-Up KYC verification dispatched for ${c.id}. Persistent investigation task created.`);
     } catch (err) {
       setErrorMsg(err.message || 'Failed to dispatch step-up verification.');
     } finally {
@@ -46,15 +62,16 @@ export default function CustomerInvestigationView({
   };
 
   const handleResolve = async () => {
+    if (isSubmitting) return;
     setIsSubmitting(true);
     setErrorMsg(null);
-    setActionSuccessMsg(null);
+    setSuccessMsg(null);
     try {
       if (onResolveVerification) {
         await onResolveVerification(c.id, resolveNotes);
       }
       setShowResolveModal(false);
-      setActionSuccessMsg(`Case ${c.id} cleared and resolved. Cryptographic audit trail updated.`);
+      setSuccessMsg(`Case ${c.id} cleared and resolved. Cryptographic audit trail updated.`);
     } catch (err) {
       setErrorMsg(err.message || 'Failed to resolve verification.');
     } finally {
@@ -62,505 +79,455 @@ export default function CustomerInvestigationView({
     }
   };
 
+  // Contributions fallback
+  const contributions = c.contributions || [
+    { name: 'Local financial behaviour (Bank A)', score: 35, color: '#4F46E5' },
+    { name: 'Cross-institution signal alignment (Insurer B)', score: 28, color: '#0D9488' },
+    { name: 'Borrowing behaviour deviation (Lender C)', score: 37, color: '#D97706' }
+  ];
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
-      {/* Honest Feedback Banners */}
-      {errorMsg && (
-        <div style={{
-          padding: '12px 16px',
-          backgroundColor: 'var(--danger-light)',
-          border: '1.5px solid var(--danger-border)',
-          borderRadius: 'var(--radius-sm)',
-          color: 'var(--danger-text)',
-          fontSize: '0.825rem',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <AlertTriangle size={18} />
-            <span><strong>Access Control / Validation Notice:</strong> {errorMsg}</span>
-          </div>
-          <button 
-            onClick={() => setErrorMsg(null)} 
-            style={{ cursor: 'pointer', background: 'none', border: 'none', color: 'inherit', fontWeight: 'bold', fontSize: '1rem' }}
-          >
-            ✕
-          </button>
-        </div>
-      )}
+      {/* Top Breadcrumb & Action Bar */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+        <button
+          onClick={onBack}
+          className="btn btn-ghost btn-sm"
+          style={{ gap: '6px', color: 'var(--text-secondary)' }}
+        >
+          <ArrowLeft size={14} />
+          <span>Back to Risk Cases</span>
+        </button>
 
-      {actionSuccessMsg && (
-        <div style={{
-          padding: '12px 16px',
-          backgroundColor: 'var(--success-light)',
-          border: '1.5px solid var(--success-border)',
-          borderRadius: 'var(--radius-sm)',
-          color: 'var(--success-text)',
-          fontSize: '0.825rem',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <CheckCircle2 size={18} />
-            <span>{actionSuccessMsg}</span>
-          </div>
-          <button 
-            onClick={() => setActionSuccessMsg(null)} 
-            style={{ cursor: 'pointer', background: 'none', border: 'none', color: 'inherit', fontWeight: 'bold', fontSize: '1rem' }}
-          >
-            ✕
-          </button>
-        </div>
-      )}
-
-      {/* Navigation & Case Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <button 
-            onClick={onBack}
-            className="btn btn-secondary btn-sm"
-            style={{ padding: '6px 12px' }}
-          >
-            <ArrowLeft size={14} />
-            <span>Back to Case List</span>
-          </button>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <h1 style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--primary-dark)' }}>
-                Investigation: {c.id}
-              </h1>
-              <span className={`badge ${c.riskLevel === 'HIGH' ? 'badge-danger' : (c.riskLevel === 'MEDIUM' ? 'badge-warning' : 'badge-success')}`}>
-                Risk: {c.riskLevel}
-              </span>
-              <span className="badge badge-success">
-                <Lock size={10} style={{ marginRight: '3px' }} />
-                Privacy: {c.privacyStatus || 'Protected'}
-              </span>
-              <span className="badge badge-primary">
-                Status: {c.status || 'NORMAL_PROCESSING'}
-              </span>
-            </div>
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-              Entity Reference: <code style={{ fontFamily: 'var(--font-mono)', color: 'var(--primary-dark)', fontWeight: 600 }}>{c.entityRef}</code> | Pseudonym: {c.customerId}
-            </p>
-          </div>
-        </div>
-
-        {/* Action Button: Step-up Verification & Resolution Lifecycle */}
-        <div style={{ display: 'flex', gap: '8px' }}>
+        {/* Action Controls */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           {isResolved ? (
             <div style={{
-              display: 'flex',
+              display: 'inline-flex',
               alignItems: 'center',
               gap: '6px',
-              padding: '7px 16px',
-              backgroundColor: 'var(--success-light)',
-              color: 'var(--success-text)',
-              borderRadius: 'var(--radius-md)',
-              fontSize: '0.8rem',
-              fontWeight: 600,
-              border: '1px solid var(--success-border)'
+              padding: '6px 14px',
+              backgroundColor: 'var(--status-success-subtle)',
+              color: 'var(--status-success-text)',
+              border: '1px solid var(--status-success-border)',
+              borderRadius: 'var(--radius-sm)',
+              fontSize: '12px',
+              fontWeight: 600
             }}>
-              <CheckCircle2 size={16} />
+              <CheckCircle2 size={14} />
               <span>Case Cleared & Resolved</span>
             </div>
           ) : isVerificationActive ? (
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <div style={{
-                display: 'flex',
+                display: 'inline-flex',
                 alignItems: 'center',
                 gap: '6px',
-                padding: '7px 14px',
-                backgroundColor: 'var(--warning-light)',
-                color: 'var(--warning-text)',
-                borderRadius: 'var(--radius-md)',
-                fontSize: '0.8rem',
-                fontWeight: 600,
-                border: '1px solid var(--warning-border)'
+                padding: '6px 12px',
+                backgroundColor: 'var(--status-warning-subtle)',
+                color: 'var(--status-warning-text)',
+                border: '1px solid var(--status-warning-border)',
+                borderRadius: 'var(--radius-sm)',
+                fontSize: '12px',
+                fontWeight: 600
               }}>
-                <Clock size={15} />
+                <Clock size={14} />
                 <span>Verification Task Active</span>
               </div>
-              <button
-                onClick={() => setShowResolveModal(true)}
-                className="btn btn-primary btn-sm"
-              >
-                <FileCheck2 size={13} />
-                <span>Resolve Verification</span>
-              </button>
+              {canResolve ? (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => setShowResolveModal(true)}
+                  disabled={isSubmitting}
+                  icon={<FileCheck2 size={13} />}
+                >
+                  Resolve Case
+                </Button>
+              ) : (
+                <span style={{ fontSize: '11px', color: 'var(--text-secondary)', padding: '5px 8px', borderRadius: 'var(--radius-sm)', backgroundColor: 'var(--bg-subtle)', border: '1px solid var(--border-default)' }}>
+                  Awaiting Compliance Clearance
+                </span>
+              )}
             </div>
-          ) : (
-            <button
+          ) : canTrigger ? (
+            <Button
+              variant="primary"
+              size="sm"
               onClick={handleTrigger}
+              loading={isSubmitting}
               disabled={isSubmitting}
-              className="btn btn-primary btn-sm"
+              icon={<Send size={13} />}
             >
-              <Send size={13} />
-              <span>{isSubmitting ? 'Dispatching...' : 'Trigger Step-Up Verification'}</span>
-            </button>
+              Trigger Step-Up Verification
+            </Button>
+          ) : (
+            <span style={{ fontSize: '11px', color: 'var(--text-secondary)', padding: '5px 8px', borderRadius: 'var(--radius-sm)', backgroundColor: 'var(--bg-subtle)', border: '1px solid var(--border-default)' }}>
+              Requires Risk Analyst Role to Trigger
+            </span>
           )}
         </div>
       </div>
 
-      {/* Top Profile Summary Card */}
-      <div className="card" style={{ padding: '22px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '18px' }}>
+      {/* Notifications / Alerts */}
+      {errorMsg && (
+        <div style={{
+          padding: '12px 16px',
+          backgroundColor: 'var(--status-danger-subtle)',
+          border: '1px solid var(--status-danger-border)',
+          borderRadius: 'var(--radius-md)',
+          color: 'var(--status-danger-text)',
+          fontSize: '13px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <AlertTriangle size={16} />
+            <span>{errorMsg}</span>
+          </div>
+          <button onClick={() => setErrorMsg(null)} style={{ border: 'none', background: 'none', color: 'inherit', cursor: 'pointer', fontWeight: 'bold' }}>✕</button>
+        </div>
+      )}
+
+      {successMsg && (
+        <div style={{
+          padding: '12px 16px',
+          backgroundColor: 'var(--status-success-subtle)',
+          border: '1px solid var(--status-success-border)',
+          borderRadius: 'var(--radius-md)',
+          color: 'var(--status-success-text)',
+          fontSize: '13px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <CheckCircle2 size={16} />
+            <span>{successMsg}</span>
+          </div>
+          <button onClick={() => setSuccessMsg(null)} style={{ border: 'none', background: 'none', color: 'inherit', cursor: 'pointer', fontWeight: 'bold' }}>✕</button>
+        </div>
+      )}
+
+      {/* Header Profile Summary Card */}
+      <Card style={{ padding: '22px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))', gap: '20px' }}>
           <div>
-            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.04em' }}>
-              Identity & Pseudonym
+            <span style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.04em' }}>
+              Case Identity & Entity
             </span>
-            <p style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--primary-dark)', marginTop: '4px' }}>
-              {c.customerId}
-            </p>
-            <span style={{ fontSize: '0.715rem', color: 'var(--success-text)', fontWeight: 500 }}>
-              ✓ No PII (Aadhaar/PAN/SSN/Name) Stored
-            </span>
+            <h2 style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '2px', letterSpacing: '-0.02em' }}>
+              {c.id}
+            </h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-secondary)' }}>
+                {c.customerId}
+              </span>
+              <span style={{ color: 'var(--border-medium)' }}>•</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', padding: '1px 5px', borderRadius: '3px', backgroundColor: 'var(--bg-muted)', color: 'var(--text-muted)' }}>
+                {c.entityRef || 'ENTITY-7F21'}
+              </span>
+            </div>
           </div>
 
           <div>
-            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.04em' }}>
+            <span style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.04em' }}>
               Collaborative Risk Evaluation
             </span>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginTop: '4px' }}>
-              <span style={{ 
-                fontSize: '1.3rem', 
-                fontWeight: 700, 
-                color: c.riskLevel === 'HIGH' ? 'var(--danger-text)' : (c.riskLevel === 'MEDIUM' ? 'var(--warning-text)' : 'var(--success-text)') 
-              }}>
-                {c.riskLevel}
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginTop: '4px' }}>
+              <Badge variant={riskProps.variant} size="md">
+                {riskProps.label} RISK
+              </Badge>
+              <span style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>
+                {formatRiskScore(scoreVal)}
               </span>
-              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                (Confidence: {c.confidence}%)
-              </span>
+              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Risk Score</span>
             </div>
-            <span style={{ fontSize: '0.715rem', color: 'var(--text-secondary)' }}>
-              Cross-institution model synthesis
+            <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px', display: 'block' }}>
+              Synthesized from 3 sovereign feature partitions
             </span>
           </div>
 
           <div>
-            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.04em' }}>
+            <span style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.04em' }}>
               Recommended Action
             </span>
-            <p style={{ fontSize: '0.98rem', fontWeight: 700, color: 'var(--primary-dark)', marginTop: '4px' }}>
+            <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', marginTop: '6px' }}>
               {(c.action || 'Standard monitoring').toUpperCase()}
-            </p>
-            <span style={{ fontSize: '0.715rem', color: 'var(--text-secondary)' }}>
-              Decision-support; human auditor confirms
+            </div>
+            <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px', display: 'block' }}>
+              {c.lastEscalation || '14 mins ago'}
             </span>
           </div>
 
           <div>
-            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.04em' }}>
-              Privacy Boundary
+            <span style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.04em' }}>
+              Privacy Architecture
             </span>
-            <p style={{ fontSize: '0.98rem', fontWeight: 700, color: 'var(--success-text)', marginTop: '4px' }}>
-              Zero Raw Data Exchanged
-            </p>
-            <span style={{ fontSize: '0.715rem', color: 'var(--text-secondary)' }}>
-              Federated latent representation only
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '6px' }}>
+              <ShieldCheck size={16} color="var(--accent-teal)" />
+              <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--accent-teal)' }}>
+                Sovereign Feature Custody
+              </span>
+            </div>
+            <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px', display: 'block' }}>
+              Split Learning partial logits only; raw records stay on-premise
             </span>
           </div>
         </div>
+      </Card>
+
+      {/* Tabs Navigation */}
+      <div className="tm-tabs-nav">
+        <button
+          onClick={() => setActiveTab('evidence')}
+          className={`tm-tab-button ${activeTab === 'evidence' ? 'active' : ''}`}
+        >
+          Institutional Evidence & Synthesis
+        </button>
+        <button
+          onClick={() => setActiveTab('disclosure')}
+          className={`tm-tab-button ${activeTab === 'disclosure' ? 'active' : ''}`}
+        >
+          Minimum Disclosure Matrix
+        </button>
+        <button
+          onClick={() => setActiveTab('audit')}
+          className={`tm-tab-button ${activeTab === 'audit' ? 'active' : ''}`}
+        >
+          Investigation Task & Audit Info
+        </button>
       </div>
 
-      {/* Main Investigation Split: Why escalated vs Minimum Disclosure */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: '22px' }}>
-        
-        {/* Left: Why was this case evaluated? */}
-        <div className="card">
-          <div className="card-header">
-            <div>
-              <h3 style={{ fontSize: '0.98rem', fontWeight: 700, color: 'var(--primary-dark)' }}>
-                Cross-Institutional Signal Breakdown
-              </h3>
-              <p style={{ fontSize: '0.765rem', color: 'var(--text-secondary)' }}>
-                Multi-institution signal alignment with strict sovereign cryptographic boundaries.
-              </p>
-            </div>
-            <span className="badge badge-warning">Isolated Weak Signals</span>
-          </div>
-
-          <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            {/* Bank A Signal */}
-            <div style={{
-              padding: '14px',
-              backgroundColor: 'var(--bg-subtle)',
-              borderRadius: 'var(--radius-sm)',
-              borderLeft: '4px solid var(--primary-dark)'
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                <span style={{ fontWeight: 700, fontSize: '0.785rem', color: 'var(--primary-dark)' }}>
-                  BANK A SIGNAL (Local Node)
-                </span>
-                <span className="badge badge-neutral" style={{ fontSize: '0.65rem' }}>
-                  {c.localEvidence?.bank?.severity || 'Normal'}
-                </span>
-              </div>
-              <p style={{ fontSize: '0.815rem', color: 'var(--text-primary)', fontWeight: 500 }}>
-                "{c.localEvidence?.bank?.signalText || 'Repayment telemetry consistent.'}"
-              </p>
-              <p style={{ fontSize: '0.725rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                {c.localEvidence?.bank?.detail || 'Mild variance within baseline tolerance.'}
-              </p>
-            </div>
-
-            {/* Insurer B Signal */}
-            <div style={{
-              padding: '14px',
-              backgroundColor: 'var(--bg-subtle)',
-              borderRadius: 'var(--radius-sm)',
-              borderLeft: '4px solid var(--secondary-green)'
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                <span style={{ fontWeight: 700, fontSize: '0.785rem', color: 'var(--secondary-green)' }}>
-                  INSURER B SIGNAL (External Node)
-                </span>
-                <span className="badge badge-neutral" style={{ fontSize: '0.65rem' }}>
-                  Zero Raw Record Exchanged
-                </span>
-              </div>
-              <p style={{ fontSize: '0.815rem', color: 'var(--text-primary)', fontWeight: 500 }}>
-                "{c.localEvidence?.insurer?.signalText || 'Privacy-preserving anomaly score within bounds.'}"
-              </p>
-              <p style={{ fontSize: '0.725rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                {c.localEvidence?.insurer?.detail || 'Insurer policy records remain sovereign behind local firewall.'}
-              </p>
-            </div>
-
-            {/* Lender C Signal */}
-            <div style={{
-              padding: '14px',
-              backgroundColor: 'var(--bg-subtle)',
-              borderRadius: 'var(--radius-sm)',
-              borderLeft: '4px solid var(--warning)'
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                <span style={{ fontWeight: 700, fontSize: '0.785rem', color: 'var(--warning-text)' }}>
-                  LENDER C SIGNAL (External Node)
-                </span>
-                <span className="badge badge-neutral" style={{ fontSize: '0.65rem' }}>
-                  Zero Raw Record Exchanged
-                </span>
-              </div>
-              <p style={{ fontSize: '0.815rem', color: 'var(--text-primary)', fontWeight: 500 }}>
-                "{c.localEvidence?.lender?.signalText || 'Borrowing baseline nominal.'}"
-              </p>
-              <p style={{ fontSize: '0.725rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                {c.localEvidence?.lender?.detail || 'Standalone lender thresholds not breached.'}
-              </p>
-            </div>
-
-            {/* Collaborative Result Box */}
-            <div style={{
-              padding: '16px',
-              backgroundColor: c.riskLevel === 'HIGH' ? 'var(--danger-light)' : 'var(--sage-light)',
-              border: c.riskLevel === 'HIGH' ? '1px solid var(--danger-border)' : '1px solid var(--sage-border)',
-              borderRadius: 'var(--radius-sm)'
-            }}>
-              <div style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: '6px', 
-                color: c.riskLevel === 'HIGH' ? 'var(--danger-text)' : 'var(--primary-dark)', 
-                fontWeight: 700, 
-                fontSize: '0.825rem', 
-                marginBottom: '6px' 
+      {/* TAB 1: Evidence & Synthesis */}
+      {activeTab === 'evidence' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {/* Collaborative Synthesis Highlight Card */}
+          <Card style={{
+            backgroundColor: c.riskLevel === 'HIGH' ? 'var(--status-danger-subtle)' : 'var(--primary-subtle)',
+            border: `1px solid ${c.riskLevel === 'HIGH' ? 'var(--status-danger-border)' : 'var(--primary-border)'}`,
+            padding: '20px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
+              <div style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '50%',
+                backgroundColor: '#FFFFFF',
+                color: c.riskLevel === 'HIGH' ? 'var(--status-danger)' : 'var(--primary)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                boxShadow: 'var(--shadow-xs)'
               }}>
-                <AlertTriangle size={15} />
-                <span>COLLABORATIVE SYNTHESIS RESULT</span>
+                <Sparkles size={18} />
               </div>
-              <p style={{ fontSize: '0.815rem', color: 'var(--text-primary)', lineHeight: 1.5 }}>
-                {c.collaborativeSynthesis || c.explanation}
-              </p>
+              <div>
+                <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                  Collaborative Model Discovery Rationale
+                </h3>
+                <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px', lineHeight: 1.5 }}>
+                  {c.collaborativeSynthesis || c.explanation || 'Independent indicators slightly deviated from rolling baseline; collaborative threshold evaluated.'}
+                </p>
+              </div>
             </div>
+          </Card>
+
+          {/* 3 Sovereign Signal Evidence Cards */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))', gap: '16px' }}>
+            {/* Bank A Evidence */}
+            <Card title="Bank A — Transaction & Liquidity">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Local Assessment</span>
+                  <Badge variant="neutral" size="sm">Sub-Threshold</Badge>
+                </div>
+                <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                  {c.localEvidence?.bank?.signalText || 'Repayment behaviour ratio: 0.88'}
+                </div>
+                <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.45 }}>
+                  {c.localEvidence?.bank?.detail || 'Mild repayment date delay (+6 days). Within standard grace window; insufficient alone for alert.'}
+                </p>
+              </div>
+            </Card>
+
+            {/* Insurer B Evidence */}
+            <Card title="Insurer B — Claims & Loss Exposure">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Local Assessment</span>
+                  <Badge variant="neutral" size="sm">Sub-Threshold</Badge>
+                </div>
+                <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                  {c.localEvidence?.insurer?.signalText || 'Recent policy claim deviation: 0.38'}
+                </div>
+                <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.45 }}>
+                  {c.localEvidence?.insurer?.detail || 'First-time property loss claim following policy tenure. Isolated claim anomaly score is non-conclusive.'}
+                </p>
+              </div>
+            </Card>
+
+            {/* Lender C Evidence */}
+            <Card title="Lender C — Velocity & Debt Stress">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Local Assessment</span>
+                  <Badge variant="neutral" size="sm">Sub-Threshold</Badge>
+                </div>
+                <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                  {c.localEvidence?.lender?.signalText || 'Application velocity: 2 inquiries'}
+                </div>
+                <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.45 }}>
+                  {c.localEvidence?.lender?.detail || 'Two loan inquiries within 14-day window. Standalone threshold not breached without cross-bank context.'}
+                </p>
+              </div>
+            </Card>
           </div>
-        </div>
 
-        {/* Right: Explainable Contributions & Dynamic Minimum Disclosure */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-          
-          {/* Explainability Contribution Scores */}
-          <div className="card" style={{ padding: '22px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-              <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--primary-dark)' }}>
-                Explainable Risk Contribution Scores
-              </h3>
-              <span className="badge badge-demo" style={{ fontSize: '0.65rem' }}>Model Attribution</span>
-            </div>
-            
-            <p style={{ fontSize: '0.765rem', color: 'var(--text-secondary)', marginBottom: '16px' }}>
-              Relative feature importance estimated via collaborative representation weights:
-            </p>
-
+          {/* Institutional Contribution Breakdown */}
+          <Card
+            title="Institutional Feature Contribution Breakdown"
+            subtitle="Normalized partial logit magnitudes mathematically summing to exactly 100%."
+          >
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              {c.contributions?.map((item, idx) => (
+              {contributions.map((item, idx) => (
                 <div key={idx}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.785rem', marginBottom: '5px' }}>
-                    <span style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{item.name}</span>
-                    <span style={{ fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--primary-dark)' }}>{item.score}%</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px', fontSize: '12px' }}>
+                    <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{item.name}</span>
+                    <span style={{ fontFamily: 'var(--font-sans)', fontVariantNumeric: 'tabular-nums', fontWeight: 700, color: 'var(--text-primary)' }}>
+                      {item.score}%
+                    </span>
                   </div>
-                  <div style={{ width: '100%', height: '8px', backgroundColor: 'var(--bg-subtle)', borderRadius: '4px', overflow: 'hidden' }}>
-                    <div style={{
-                      width: `${item.score}%`,
-                      height: '100%',
-                      backgroundColor: item.color || 'var(--primary-dark)',
-                      borderRadius: '4px'
-                    }} />
+                  <div style={{ width: '100%', height: '8px', backgroundColor: 'var(--bg-muted)', borderRadius: '4px', overflow: 'hidden' }}>
+                    <div
+                      style={{
+                        width: `${item.score}%`,
+                        height: '100%',
+                        backgroundColor: idx === 0 ? 'var(--primary)' : (idx === 1 ? 'var(--accent-teal)' : 'var(--status-warning)'),
+                        borderRadius: '4px',
+                        transition: 'width 0.4s ease'
+                      }}
+                    />
                   </div>
                 </div>
               ))}
             </div>
-
-            <div style={{
-              marginTop: '18px',
-              padding: '12px 14px',
-              backgroundColor: 'var(--bg-subtle)',
-              borderRadius: 'var(--radius-sm)',
-              fontSize: '0.735rem',
-              color: 'var(--text-secondary)',
-              border: '1px solid var(--border-light)'
-            }}>
-              <strong style={{ color: 'var(--primary-dark)' }}>Decision Support Mandate:</strong> The system does NOT autonomously decline customers. It provides actionable reasoning to risk officers to request targeted step-up proof.
-            </div>
-          </div>
-
-          {/* DYNAMIC MINIMUM NECESSARY DISCLOSURE MATRIX (FIXED BUG: NO HARDCODED VALUES) */}
-          <div className="card" style={{ padding: '22px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-              <div style={{
-                width: '30px',
-                height: '30px',
-                borderRadius: 'var(--radius-sm)',
-                backgroundColor: 'var(--success-light)',
-                color: 'var(--success-text)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                <Lock size={15} />
-              </div>
-              <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--primary-dark)' }}>
-                Minimum Necessary Disclosure Matrix
-              </h3>
-            </div>
-
-            <p style={{ fontSize: '0.765rem', color: 'var(--text-secondary)', marginBottom: '14px' }}>
-              What does an institution analyst actually learn vs what is strictly blocked?
-            </p>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-              {/* Learned Box (Dynamic) */}
-              <div style={{
-                padding: '14px',
-                backgroundColor: 'var(--success-light)',
-                border: '1px solid var(--success-border)',
-                borderRadius: 'var(--radius-sm)',
-                fontSize: '0.765rem'
-              }}>
-                <div style={{ fontWeight: 700, color: 'var(--success-text)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <CheckCircle2 size={13} />
-                  <span>WHAT IS LEARNED:</span>
-                </div>
-                <ul style={{ paddingLeft: '16px', display: 'flex', flexDirection: 'column', gap: '5px', color: 'var(--text-primary)' }}>
-                  {c.minimumDisclosure?.disclosedToAnalyst?.map((item, idx) => (
-                    <li key={idx}><strong>{item}</strong></li>
-                  )) || (
-                    <>
-                      <li>Risk Level: <strong>{c.riskLevel}</strong></li>
-                      <li>Confidence: <strong>{c.confidence}%</strong></li>
-                      <li>Decision: <strong>{c.action}</strong></li>
-                    </>
-                  )}
-                </ul>
-              </div>
-
-              {/* Not Disclosed Box (Dynamic) */}
-              <div style={{
-                padding: '14px',
-                backgroundColor: 'var(--danger-light)',
-                border: '1px solid var(--danger-border)',
-                borderRadius: 'var(--radius-sm)',
-                fontSize: '0.765rem'
-              }}>
-                <div style={{ fontWeight: 700, color: 'var(--danger-text)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <EyeOff size={13} />
-                  <span>STRICTLY NOT DISCLOSED:</span>
-                </div>
-                <ul style={{ paddingLeft: '16px', display: 'flex', flexDirection: 'column', gap: '5px', color: 'var(--danger-text)' }}>
-                  {c.minimumDisclosure?.strictlyProtected?.map((item, idx) => (
-                    <li key={idx}>✕ {item}</li>
-                  )) || (
-                    <>
-                      <li>✕ Customer Legal Name / PII</li>
-                      <li>✕ Specific Account Numbers</li>
-                      <li>✕ Detailed Transaction Logs</li>
-                    </>
-                  )}
-                </ul>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </div>
-
-      {/* Resolve Verification Modal */}
-      {showResolveModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(18, 55, 42, 0.6)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 100,
-          padding: '20px'
-        }}>
-          <div className="card" style={{ maxWidth: '480px', width: '100%', padding: '24px' }}>
-            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--primary-dark)', marginBottom: '8px' }}>
-              Resolve Step-Up Verification
-            </h3>
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '14px' }}>
-              Confirm that customer provided acceptable verification documents to resolve the cross-institution flag.
-            </p>
-            <textarea
-              value={resolveNotes}
-              onChange={(e) => setResolveNotes(e.target.value)}
-              rows={4}
-              style={{
-                width: '100%',
-                padding: '10px',
-                borderRadius: 'var(--radius-sm)',
-                border: '1px solid var(--border-medium)',
-                fontSize: '0.8rem',
-                fontFamily: 'inherit',
-                marginBottom: '16px'
-              }}
-            />
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-              <button
-                onClick={() => setShowResolveModal(false)}
-                className="btn btn-secondary btn-sm"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleResolve}
-                disabled={isSubmitting}
-                className="btn btn-primary btn-sm"
-              >
-                {isSubmitting ? 'Saving...' : 'Submit Resolution'}
-              </button>
-            </div>
-          </div>
+          </Card>
         </div>
       )}
+
+      {/* TAB 2: Minimum Necessary Disclosure Matrix */}
+      {activeTab === 'disclosure' && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: '20px' }}>
+          <Card
+            title="Disclosed to Cross-Institution Risk Analyst"
+            subtitle="Strict minimum required for risk actionability under DPDP / GDPR Article 5(1)(c)."
+          >
+            <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {(c.minimumDisclosure?.disclosedToAnalyst || [
+                `Composite Risk Level: ${c.riskLevel} (Risk Score: ${formatRiskScore(scoreVal)})`,
+                'Primary Archetype: Cross-institution signal convergence / loan stacking',
+                'Recommended Protocol: Step-up verification dispatch'
+              ]).map((item, i) => (
+                <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                  <CheckCircle2 size={16} color="var(--status-success)" style={{ flexShrink: 0, marginTop: '2px' }} />
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          </Card>
+
+          <Card
+            title="Strictly Protected On-Premise"
+            subtitle="Raw sensitive features that NEVER cross sovereign institutional perimeters."
+          >
+            <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {(c.minimumDisclosure?.strictlyProtected || [
+                'Customer Legal Name, National Identity (Aadhaar / SSN / PAN), Phone, Residential Address',
+                'Specific Bank Account numbers, exact transaction counter-parties, running balances',
+                'Insurer claim documentation, property loss payout checks, clinical records',
+                'Lender facility contracts, employer paystubs, specific debt schedules'
+              ]).map((item, i) => (
+                <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                  <Lock size={15} color="var(--primary)" style={{ flexShrink: 0, marginTop: '2px' }} />
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          </Card>
+        </div>
+      )}
+
+      {/* TAB 3: Investigation Task & Audit Info */}
+      {activeTab === 'audit' && (
+        <Card title="Task Tracking & Regulatory Clearance">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
+              <div style={{ padding: '12px', borderRadius: 'var(--radius-sm)', backgroundColor: 'var(--bg-subtle)', border: '1px solid var(--border-default)' }}>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>ACTIVE TASK ID</span>
+                <p style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginTop: '2px' }}>
+                  {c.activeTaskId || (isVerificationActive ? (c.verificationTask?.id || 'Pending assignment') : 'None')}
+                </p>
+              </div>
+
+              <div style={{ padding: '12px', borderRadius: 'var(--radius-sm)', backgroundColor: 'var(--bg-subtle)', border: '1px solid var(--border-default)' }}>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>CASE STATUS</span>
+                <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginTop: '2px' }}>
+                  {statusProps.label}
+                </p>
+              </div>
+
+              <div style={{ padding: '12px', borderRadius: 'var(--radius-sm)', backgroundColor: 'var(--bg-subtle)', border: '1px solid var(--border-default)' }}>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>CRYPTOGRAPHIC CHAIN</span>
+                <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--status-success-text)', marginTop: '2px' }}>
+                  SHA-256 Chained Block
+                </p>
+              </div>
+            </div>
+
+            <div style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+              All actions taken on this case are recorded in the central coordinator database (`coordinator.db`), chained to previous events using SHA-256 hashes, and verifiable from the genesis block.
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* Case Resolution Modal */}
+      <Modal
+        isOpen={showResolveModal}
+        onClose={() => setShowResolveModal(false)}
+        title={`Resolve Case ${c.id}`}
+        subtitle="Formal compliance case clearance and regulatory record archiving"
+        footer={
+          <>
+            <Button variant="outline" size="sm" onClick={() => setShowResolveModal(false)}>
+              Cancel
+            </Button>
+            <Button variant="primary" size="sm" onClick={handleResolve} loading={isSubmitting}>
+              Confirm Clearance & Sign
+            </Button>
+          </>
+        }
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div>
+            <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>
+              Resolution Rationale / Compliance Clearance Notes:
+            </label>
+            <textarea
+              rows={4}
+              value={resolveNotes}
+              onChange={(e) => setResolveNotes(e.target.value)}
+              style={{ width: '100%', fontSize: '13px', resize: 'vertical' }}
+            />
+          </div>
+          <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+            This clearance will be permanently appended to the tamper-evident SHA-256 audit log and the active verification task marked as RESOLVED.
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

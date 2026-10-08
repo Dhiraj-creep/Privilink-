@@ -18,7 +18,7 @@ Federated protocol:
 
 import json
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -38,6 +38,13 @@ from backend.ml.dataset_generator import (
     generate_synthetic_data,
     split_train_val_test_entities,
 )
+
+
+class DistributedInferenceUnavailableError(Exception):
+    """Raised when one or more sovereign participant nodes are unreachable or fail during distributed inference."""
+    def __init__(self, message: str, failed_nodes: Optional[List[str]] = None):
+        super().__init__(message)
+        self.failed_nodes = failed_nodes or []
 
 
 class LocalFeatureEncoder:
@@ -442,51 +449,84 @@ class VFLEngine:
     def predict_distributed(
         self,
         entity_ref: str,
-        fallback_features: Optional[Dict[str, Any]] = None,
-        timeout: float = 2.0
+        timeout: float = 0.8,
+        allow_test_inprocess: Optional[bool] = None
     ) -> Dict[str, Any]:
         """
         Coordinates distributed Split Learning inference across sovereign participant nodes:
         Bank A (8001), Insurer B (8002), and Lender C (8003).
-        Sends RPC requests: POST /compute-partial-logit.
-        Each participant computes and returns its scalar partial logit z_k.
-        Coordinator combines partial logits: z = sum(z_k) + b, p = sigma(z).
-        Derives exact normalized contributions summing to 100%.
+        Sends authenticated RPC requests: POST /compute-partial-logit with {"entity_ref": entity_ref}.
+        Enforces sovereign boundary: NO raw features are transmitted across perimeters.
+        Fails honestly (raises DistributedInferenceUnavailableError) if any required node is unreachable.
+        In-process fallback is strictly prohibited in production and distributed mode.
         """
         import httpx
-        from backend.config import BANK_A_URL, INSURER_B_URL, LENDER_C_URL
+        from backend.config import (
+            BANK_A_URL, INSURER_B_URL, LENDER_C_URL,
+            INTERNAL_SERVICE_KEY, TRUSTMESH_ENV, TRUSTMESH_MODE
+        )
         from backend.nodes.bank_node import BankNodeService
         from backend.nodes.insurer_node import InsurerNodeService
         from backend.nodes.lender_node import LenderNodeService
 
+        # Explicit test adapter flag: only permitted in testing when TRUSTMESH_ENV != "production"
+        is_test_adapter_allowed = (
+            TRUSTMESH_ENV != "production" and
+            allow_test_inprocess is not False and (
+                TRUSTMESH_MODE == "test_inprocess" or allow_test_inprocess is True
+            )
+        )
+
         nodes_config = [
-            ("BANK_A", BANK_A_URL, BankNodeService()),
-            ("INSURER_B", INSURER_B_URL, InsurerNodeService()),
-            ("LENDER_C", LENDER_C_URL, LenderNodeService()),
+            ("BANK_A", BANK_A_URL, BankNodeService),
+            ("INSURER_B", INSURER_B_URL, InsurerNodeService),
+            ("LENDER_C", LENDER_C_URL, LenderNodeService),
         ]
 
         partial_results = {}
         channels = {}
+        failed_nodes = []
 
-        for inst_id, base_url, fallback_service in nodes_config:
+        headers = {"X-Internal-Service-Key": INTERNAL_SERVICE_KEY}
+
+        for inst_id, base_url, node_service_cls in nodes_config:
+            if is_test_adapter_allowed:
+                try:
+                    res = node_service_cls().compute_partial_logit(entity_ref)
+                    partial_results[inst_id] = res
+                    channels[inst_id] = "Isolated Test In-Process Adapter"
+                    continue
+                except Exception as e:
+                    failed_nodes.append(f"{inst_id} ({e})")
+                    continue
+
+            # Standard distributed RPC (Zero raw feature transmission)
             success = False
             try:
                 with httpx.Client(timeout=timeout) as client:
                     resp = client.post(
                         f"{base_url}/compute-partial-logit",
-                        json={"entity_ref": entity_ref, "raw_features": fallback_features}
+                        json={"entity_ref": entity_ref},
+                        headers=headers
                     )
                     if resp.status_code == 200:
                         partial_results[inst_id] = resp.json()
                         channels[inst_id] = f"HTTP RPC ({base_url})"
                         success = True
-            except Exception:
+                    else:
+                        failed_nodes.append(f"{inst_id} (HTTP {resp.status_code})")
+            except Exception as e:
+                failed_nodes.append(f"{inst_id} ({type(e).__name__})")
+
+            if not success and not is_test_adapter_allowed:
+                # Strictly NO silent fallback to in-process DB in distributed mode
                 pass
 
-            if not success:
-                res = fallback_service.compute_partial_logit(entity_ref, raw_features=fallback_features)
-                partial_results[inst_id] = res
-                channels[inst_id] = "In-Process Sovereign Node"
+        if failed_nodes:
+            raise DistributedInferenceUnavailableError(
+                f"Distributed inference unavailable: Sovereign node(s) unreachable or failed: {', '.join(failed_nodes)}.",
+                failed_nodes=failed_nodes
+            )
 
         bias = float(self.vfl_model.bias) if self.vfl_model is not None else -1.77
         z_b = partial_results["BANK_A"]["partial_logit"]

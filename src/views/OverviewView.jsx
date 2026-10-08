@@ -1,51 +1,43 @@
 import React, { useState, useEffect } from 'react';
 import {
-  ShieldCheck,
   ArrowRight,
-  Building,
-  Activity,
-  Copy,
-  Check,
-  Eye,
-  Sparkles
+  Building2,
+  CheckCircle2
 } from 'lucide-react';
 import {
   AreaChart,
   Area,
-  BarChart,
-  Bar,
   XAxis,
   YAxis,
   Tooltip as RechartsTooltip,
   ResponsiveContainer,
-  CartesianGrid,
-  Cell
+  CartesianGrid
 } from 'recharts';
 
 import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
-import { Chip } from '../components/ui/Chip';
 import { Button } from '../components/ui/Button';
-import { Sparkline } from '../components/ui/Sparkline';
 import { api } from '../api/client';
-import { RISK_CASES, INITIAL_AUDIT_LOGS } from '../data/syntheticData';
+import { RISK_CASES } from '../data/syntheticData';
+import { formatNumber, formatMetric, getRiskVariant, formatRiskScore } from '../utils/formatters';
+import { getPriorityQueue } from '../utils/priorityQueue';
 
-// Chart Tooltip Component
+// Clean white chart tooltip
 function CustomChartTooltip({ active, payload, label }) {
   if (!active || !payload || !payload.length) return null;
   return (
     <div
       style={{
-        backgroundColor: 'var(--bg-surface-raised)',
+        backgroundColor: '#FFFFFF',
         border: '1px solid var(--border-default)',
         borderRadius: 'var(--radius-sm)',
         padding: '8px 12px',
-        fontSize: 'var(--text-xs)',
+        fontSize: '12px',
         boxShadow: 'var(--shadow-md)',
         color: 'var(--text-primary)'
       }}
     >
-      <div style={{ fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '4px' }}>
+      <div style={{ fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>
         {label}
       </div>
       {payload.map((entry, index) => (
@@ -62,16 +54,16 @@ function CustomChartTooltip({ active, payload, label }) {
           <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <span
               style={{
-                width: '7px',
-                height: '7px',
+                width: '8px',
+                height: '8px',
                 borderRadius: '50%',
                 backgroundColor: entry.color
               }}
             />
             <span style={{ color: 'var(--text-secondary)' }}>{entry.name}:</span>
           </span>
-          <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--text-primary)' }}>
-            {entry.value}
+          <span style={{ fontFamily: 'var(--font-sans)', fontVariantNumeric: 'tabular-nums', fontWeight: 600, color: 'var(--text-primary)' }}>
+            {entry.value}%
           </span>
         </div>
       ))}
@@ -81,752 +73,466 @@ function CustomChartTooltip({ active, payload, label }) {
 
 export default function OverviewView({
   onNavigate,
-  onSelectInstitution,
+  onSelectCase,
   quarantinedLender = false
 }) {
-  const [copiedHash, setCopiedHash] = useState(null);
-  const [liveCases, setLiveCases] = useState(RISK_CASES);
-  const [auditLogs, setAuditLogs] = useState(INITIAL_AUDIT_LOGS);
-  const [lastVerifiedTime] = useState('2m ago');
+  const [cases, setCases] = useState(RISK_CASES);
+  const [metrics, setMetrics] = useState(null);
+  const [clusterInfo, setClusterInfo] = useState(null);
+  const [auditStatus, setAuditStatus] = useState({
+    status: 'CHECKING', // 'CHECKING' | 'VERIFIED' | 'TAMPER_DETECTED' | 'UNAVAILABLE'
+    totalEvents: 0,
+    verifiedAt: null,
+    error: null
+  });
 
   useEffect(() => {
     let isMounted = true;
-    const fetchData = async () => {
-      try {
-        const [casesRes, auditRes] = await Promise.all([
-          api.getCases().catch(() => null),
-          api.getAuditLogs().catch(() => null)
-        ]);
-
-        if (!isMounted) return;
-
-        if (Array.isArray(casesRes) && casesRes.length > 0) {
-          setLiveCases(casesRes);
+    api.getCases()
+      .then((data) => {
+        if (isMounted && Array.isArray(data)) {
+          setCases(data);
         }
-        if (Array.isArray(auditRes) && auditRes.length > 0) {
-          setAuditLogs(auditRes);
-        }
-      } catch (err) {
-        if (!isMounted) return;
-        console.warn('Overview data fetch notice:', err);
-      }
-    };
+      })
+      .catch(() => {});
 
-    fetchData();
+    api.getModelMetrics()
+      .then((m) => {
+        if (isMounted && m) setMetrics(m);
+      })
+      .catch(() => {});
+
+    api.clusterHealthCheck()
+      .then((c) => {
+        if (isMounted && c) setClusterInfo(c);
+      })
+      .catch(() => {});
+
+    api.verifyAuditChain()
+      .then((res) => {
+        if (!isMounted) return;
+        if (res && res.valid) {
+          setAuditStatus({
+            status: 'VERIFIED',
+            totalEvents: typeof res.total_events === 'number' ? res.total_events : (res.total_events ?? 0),
+            verifiedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+            error: null
+          });
+        } else {
+          setAuditStatus({
+            status: 'TAMPER_DETECTED',
+            totalEvents: res?.total_events || 0,
+            verifiedAt: null,
+            error: res?.error || 'Cryptographic chain severance detected'
+          });
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setAuditStatus({
+            status: 'UNAVAILABLE',
+            totalEvents: 0,
+            verifiedAt: null,
+            error: 'Audit verification service unreachable'
+          });
+        }
+      });
+
     return () => { isMounted = false; };
   }, []);
 
-  const handleCopyHash = (hash, eventId) => {
-    navigator.clipboard?.writeText(hash);
-    setCopiedHash(eventId);
-    setTimeout(() => setCopiedHash(null), 1500);
-  };
+  // Compute essential metrics from authoritative data
+  const highRiskCases = cases.filter(c => c.riskLevel === 'HIGH' || c.riskLevel === 'CRITICAL');
+  const mediumRiskCases = cases.filter(c => c.riskLevel === 'MEDIUM' || c.riskLevel === 'MODERATE');
 
-  // Mock Realistic Chart Data (Alerts Over Time - 7 Days)
-  const alertsChartData = [
-    { time: 'Mon', bankA: 28, insurerB: 14, lenderC: 42, collaborativeAlerts: 8 },
-    { time: 'Tue', bankA: 34, insurerB: 18, lenderC: 49, collaborativeAlerts: 11 },
-    { time: 'Wed', bankA: 40, insurerB: 22, lenderC: 61, collaborativeAlerts: 16 },
-    { time: 'Thu', bankA: 38, insurerB: 19, lenderC: 58, collaborativeAlerts: 14 },
-    { time: 'Fri', bankA: 52, insurerB: 31, lenderC: 78, collaborativeAlerts: 24 },
-    { time: 'Sat', bankA: 46, insurerB: 24, lenderC: 66, collaborativeAlerts: 19 },
-    { time: 'Sun', bankA: 35, insurerB: 17, lenderC: 53, collaborativeAlerts: 12 }
+  // Compute model gain dynamically from verified metrics
+  const collabPr = metrics?.collaborative?.pr_auc ?? metrics?.globalMetrics?.prAuc ?? 0.71;
+  const bankABaseline = metrics?.baselines?.BANK_A?.pr_auc ?? 0.45;
+  const relativeModelGain = Math.round(((collabPr - bankABaseline) / bankABaseline) * 100);
+
+  // Deterministically prioritized top cases (actionable unresolved first)
+  const prioritizedQueue = getPriorityQueue(cases, 5);
+
+  // Illustrative signal convergence chart data (clearly labeled as simulation)
+  const convergenceData = [
+    { period: '12:00', bankA: 28, insurerB: 22, lenderC: 25, collaborative: 32 },
+    { period: '12:15', bankA: 34, insurerB: 26, lenderC: 30, collaborative: 38 },
+    { period: '12:30', bankA: 38, insurerB: 31, lenderC: 35, collaborative: 44 },
+    { period: '12:45', bankA: 42, insurerB: 35, lenderC: 40, collaborative: 68 },
+    { period: '13:00', bankA: 44, insurerB: 38, lenderC: 45, collaborative: 98 }
   ];
-
-  // Risk Score Distribution Histogram Data (5 Color-Coded Bands: Zero Blue)
-  const distributionData = [
-    { band: '0-20', label: 'Low', count: 642, color: '#10B981' },
-    { band: '20-40', label: 'Low-Med', count: 388, color: '#14B8A6' },
-    { band: '40-60', label: 'Medium', count: 184, color: '#64748B' },
-    { band: '60-80', label: 'High', count: 52, color: '#F59E0B' },
-    { band: '80-100', label: 'Critical', count: 18, color: '#EF4444' }
-  ];
-
-  const recentCases = liveCases.slice(0, 5);
-  const recentAudit = auditLogs.slice(0, 5);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-      {/* Page Header: Title, Subtitle, & Primary Actions */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'flex-start',
-          flexWrap: 'wrap',
-          gap: '12px',
-          paddingBottom: '4px'
-        }}
-      >
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      {/* Page Header */}
+      <div className="tm-page-header">
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <h1
-              style={{
-                fontSize: 'var(--text-xl)',
-                fontWeight: 700,
-                color: 'var(--text-primary)',
-                letterSpacing: '-0.02em',
-                margin: 0
-              }}
-            >
-              Executive Risk Intelligence
-            </h1>
-            <Badge variant="cyan" size="sm">
-              Split Learning Active
-            </Badge>
-            <Badge variant="neutral" size="sm">
-              Round #27
-            </Badge>
-          </div>
-          <p
-            style={{
-              fontSize: 'var(--text-sm)',
-              color: 'var(--text-secondary)',
-              marginTop: '4px',
-              margin: 0
-            }}
-          >
-            Real-time cross-institution systemic risk intelligence across 3 sovereign financial nodes.
+          <h1 className="tm-page-title">Executive Risk & Network Overview</h1>
+          <p className="tm-page-desc">
+            Privacy-preserving risk intelligence synthesized across sovereign Bank, Insurer, and Lender nodes without centralizing customer records.
           </p>
         </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
           <Button
             variant="outline"
-            size="sm"
-            onClick={() => onNavigate('collaborative_risk')}
+            onClick={() => onNavigate('institutions')}
+            icon={<Building2 size={14} />}
+            aria-label="Inspect Sovereign Nodes"
           >
-            <span>Explore Cases ({liveCases.length})</span>
+            Sovereign Nodes
           </Button>
-
           <Button
             variant="primary"
-            size="sm"
-            icon={<Sparkles size={13} />}
-            onClick={() => onNavigate('simulation_lab')}
+            onClick={() => onNavigate('risk_cases')}
+            iconRight={<ArrowRight size={14} />}
+            aria-label="View All Risk Cases"
           >
-            <span>Launch Simulation Lab</span>
+            View All Risk Cases
           </Button>
         </div>
       </div>
 
-      {/* Row 1: 5 KPI Cards */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
-          gap: 'var(--space-2)'
-        }}
-      >
-        {/* KPI 1: Fraud Prevented */}
-        <Card style={{ padding: '16px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <span style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Fraud Prevented
-            </span>
-            <Chip value="+14.2%" trend="up" isGood={true} />
+      {/* 4 Essential Operational KPI Cards */}
+      <div className="tm-kpi-grid">
+        {/* KPI 1: High-Risk Cases */}
+        <div className="tm-kpi-card" style={{ borderLeft: '4px solid var(--status-danger)' }}>
+          <div className="tm-kpi-label">
+            <span>Critical & High Risk</span>
+            <Badge variant="danger" size="sm">{highRiskCases.length} Active</Badge>
           </div>
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginTop: '6px' }}>
-            <div
-              style={{
-                fontSize: 'var(--text-2xl)',
-                fontWeight: 700,
-                fontFamily: 'var(--font-mono)',
-                color: 'var(--text-primary)',
-                letterSpacing: '-0.02em'
-              }}
-            >
-              $4.82M
-            </div>
-            <Sparkline data={[2.9, 3.2, 3.5, 3.9, 4.1, 4.5, 4.82]} color="var(--primary)" width={72} height={24} />
+          <div className="tm-kpi-value" style={{ color: 'var(--status-danger)' }}>
+            {formatNumber(highRiskCases.length)}
           </div>
-          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: '4px' }}>
-            Estimated risk exposure averted
+          <div className="tm-kpi-subtext">
+            <span>{mediumRiskCases.length} medium-tier under surveillance</span>
           </div>
-        </Card>
+        </div>
 
-        {/* KPI 2: Loan-Stacking Alerts */}
-        <Card style={{ padding: '16px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <span style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Loan-Stacking Alerts
-            </span>
-            <Chip value="-8.4%" trend="down" isGood={true} />
-          </div>
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginTop: '6px' }}>
-            <div
-              style={{
-                fontSize: 'var(--text-2xl)',
-                fontWeight: 700,
-                fontFamily: 'var(--font-mono)',
-                color: 'var(--text-primary)',
-                letterSpacing: '-0.02em'
-              }}
-            >
-              142
-            </div>
-            <Sparkline data={[168, 160, 172, 155, 150, 146, 142]} color="var(--accent-cyan)" width={72} height={24} />
-          </div>
-          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: '4px' }}>
-            Multi-lender velocity flags
-          </div>
-        </Card>
-
-        {/* KPI 3: Active Institutions */}
-        <Card style={{ padding: '16px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <span style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Active Institutions
-            </span>
-            <Badge variant="success" size="sm">
-              3 Online
+        {/* KPI 2: Collaborative PR-AUC */}
+        <div className="tm-kpi-card" style={{ borderLeft: '4px solid var(--accent-violet)' }}>
+          <div className="tm-kpi-label">
+            <span>Model PR-AUC</span>
+            <Badge variant="violet" size="sm">
+              <span className="tm-kpi-badge-full">+{relativeModelGain}% vs Isolated Bank</span>
+              <span className="tm-kpi-badge-short">+{relativeModelGain}% Gain</span>
             </Badge>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '6px' }}>
-            <div
-              style={{
-                fontSize: 'var(--text-2xl)',
-                fontWeight: 700,
-                fontFamily: 'var(--font-mono)',
-                color: 'var(--text-primary)',
-                letterSpacing: '-0.02em',
-                whiteSpace: 'nowrap'
-              }}
-            >
-              3 <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', fontWeight: 500 }}>/ 3</span>
-            </div>
-            <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-              <span title="Bank A (Online)" style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--success)', display: 'inline-block', boxShadow: '0 0 6px var(--success)' }} />
-              <span title="Insurer B (Online)" style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--success)', display: 'inline-block', boxShadow: '0 0 6px var(--success)' }} />
-              <span title={quarantinedLender ? 'Lender C (Quarantined)' : 'Lender C (Online)'} style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: quarantinedLender ? 'var(--danger)' : 'var(--success)', display: 'inline-block', boxShadow: quarantinedLender ? '0 0 6px var(--danger)' : '0 0 6px var(--success)' }} />
-            </div>
+          <div className="tm-kpi-value" style={{ color: 'var(--accent-violet)' }}>
+            {formatMetric(collabPr, 2)}
           </div>
-          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: '6px' }}>
-            Bank A • Insurer B • {quarantinedLender ? <strong style={{ color: 'var(--danger)' }}>Lender C (Quarantined)</strong> : 'Lender C'}
+          <div className="tm-kpi-subtext">
+            <span>ROC-AUC: {metrics?.collaborative?.roc_auc ? formatMetric(metrics.collaborative.roc_auc, 2) : '0.97'} (Zero data pooling)</span>
           </div>
-        </Card>
+        </div>
 
-        {/* KPI 4: Collaborative Model AUC */}
-        <Card style={{ padding: '16px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <span style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Model ROC-AUC
+        {/* KPI 3: Sovereign Nodes */}
+        <div className="tm-kpi-card" style={{ borderLeft: '4px solid var(--accent-teal)' }}>
+          <div className="tm-kpi-label">
+            <span>Sovereign Nodes</span>
+            <Badge variant={quarantinedLender || clusterInfo?.cluster_state === 'DEGRADED' ? 'warning' : 'teal'} size="sm">
+              {clusterInfo ? `${clusterInfo.active_nodes_count}/${clusterInfo.total_nodes_count} Connected` : (quarantinedLender ? '2/3 Active' : '3/3 Connected')}
+            </Badge>
+          </div>
+          <div className="tm-kpi-value" style={{ color: 'var(--accent-teal)' }}>
+            {clusterInfo ? `${clusterInfo.active_nodes_count} / ${clusterInfo.total_nodes_count}` : (quarantinedLender ? '2 / 3' : '3 / 3')}
+          </div>
+          <div className="tm-kpi-subtext">
+            <span>
+              {quarantinedLender
+                ? 'Lender C quarantined via Byzantine filter'
+                : clusterInfo?.cluster_state === 'DEGRADED'
+                ? 'One or more participant nodes offline'
+                : 'Bank A, Insurer B, Lender C operational'}
             </span>
-            <Chip value="+0.018" trend="up" isGood={true} />
           </div>
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginTop: '6px' }}>
-            <div
-              style={{
-                fontSize: 'var(--text-2xl)',
-                fontWeight: 700,
-                fontFamily: 'var(--font-mono)',
-                color: 'var(--text-primary)',
-                letterSpacing: '-0.02em'
-              }}
-            >
-              0.972
-            </div>
-            <Sparkline data={[0.91, 0.93, 0.94, 0.952, 0.961, 0.968, 0.972]} color="var(--primary)" width={72} height={24} />
-          </div>
-          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: '4px' }}>
-            Vertical Split Learning benchmark
-          </div>
-        </Card>
+        </div>
 
-        {/* KPI 5: Avg. Score Latency */}
-        <Card style={{ padding: '16px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <span style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Avg. Score Latency
+        {/* KPI 4: Cryptographic Audit Ledger */}
+        <div className="tm-kpi-card" style={{
+          borderLeft: `4px solid ${
+            auditStatus.status === 'VERIFIED' ? 'var(--status-success)' :
+            auditStatus.status === 'TAMPER_DETECTED' ? 'var(--status-danger)' :
+            auditStatus.status === 'UNAVAILABLE' ? 'var(--status-warning)' : 'var(--text-muted)'
+          }`
+        }}>
+          <div className="tm-kpi-label">
+            <span>Audit Integrity</span>
+            <Badge variant={
+              auditStatus.status === 'VERIFIED' ? 'success' :
+              auditStatus.status === 'TAMPER_DETECTED' ? 'danger' :
+              auditStatus.status === 'UNAVAILABLE' ? 'warning' : 'neutral'
+            } size="sm">
+              {auditStatus.status === 'VERIFIED' ? 'Verified' :
+               auditStatus.status === 'TAMPER_DETECTED' ? 'Tamper Detected' :
+               auditStatus.status === 'UNAVAILABLE' ? 'Unavailable' : 'Checking...'}
+            </Badge>
+          </div>
+          <div className="tm-kpi-value" style={{
+            color:
+              auditStatus.status === 'VERIFIED' ? 'var(--status-success)' :
+              auditStatus.status === 'TAMPER_DETECTED' ? 'var(--status-danger)' :
+              auditStatus.status === 'UNAVAILABLE' ? 'var(--status-warning)' : 'var(--text-muted)'
+          }}>
+            {auditStatus.status === 'VERIFIED' ? `${auditStatus.totalEvents}/${auditStatus.totalEvents} Blocks` :
+             auditStatus.status === 'TAMPER_DETECTED' ? 'Chain Broken' :
+             auditStatus.status === 'UNAVAILABLE' ? 'Unavailable' : 'Checking...'}
+          </div>
+          <div className="tm-kpi-subtext">
+            <span>
+              {auditStatus.status === 'VERIFIED'
+                ? `SHA-256 chain verified ${auditStatus.verifiedAt ? `at ${auditStatus.verifiedAt}` : 'from Genesis'}`
+                : (auditStatus.error || 'Cryptographic verification status pending')}
             </span>
-            <Chip value="-14ms" trend="down" isGood={true} />
           </div>
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginTop: '6px' }}>
-            <div
-              style={{
-                fontSize: 'var(--text-2xl)',
-                fontWeight: 700,
-                fontFamily: 'var(--font-mono)',
-                color: 'var(--text-primary)',
-                letterSpacing: '-0.02em'
-              }}
-            >
-              148ms
-            </div>
-            <Sparkline data={[182, 174, 168, 162, 155, 151, 148]} color="var(--success)" width={72} height={24} />
-          </div>
-          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: '4px' }}>
-            P95 blinded RPC round-trip
-          </div>
-        </Card>
+        </div>
       </div>
 
-      {/* Row 2: Charts Area (2/3 Alerts-Over-Time Area Chart + 1/3 Risk-Score Distribution Histogram) */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '2fr 1fr',
-          gap: 'var(--space-2)'
-        }}
-      >
-        {/* Left Chart: Alerts Over Time Area Chart */}
-        <Card
-          title="Cross-Institution Risk Inquiries & Alert Signals"
-          subtitle="Chronological volume of local inquiries vs synthesized collaborative alerts"
-          action={
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
-                <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#10B981' }} />
-                Bank A
-              </span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
-                <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#8B5CF6' }} />
-                Insurer B
-              </span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
-                <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#F59E0B' }} />
-                Lender C
-              </span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: 'var(--text-xs)', color: '#F87171', fontWeight: 600 }}>
-                <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#EF4444' }} />
-                Joint Flag
-              </span>
-            </div>
-          }
-        >
-          <div style={{ height: '230px', width: '100%' }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={alertsChartData} margin={{ top: 8, right: 10, left: -24, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="gradBank" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10B981" stopOpacity={0.28} />
-                    <stop offset="95%" stopColor="#10B981" stopOpacity={0.0} />
-                  </linearGradient>
-                  <linearGradient id="gradInsurer" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.28} />
-                    <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0.0} />
-                  </linearGradient>
-                  <linearGradient id="gradLender" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.28} />
-                    <stop offset="95%" stopColor="#F59E0B" stopOpacity={0.0} />
-                  </linearGradient>
-                  <linearGradient id="gradCollab" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#EF4444" stopOpacity={0.35} />
-                    <stop offset="95%" stopColor="#EF4444" stopOpacity={0.0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid stroke="rgba(255, 255, 255, 0.07)" strokeDasharray="2 3" vertical={false} />
-                <XAxis dataKey="time" stroke="var(--text-muted)" fontSize={11} tickLine={false} />
-                <YAxis stroke="var(--text-muted)" fontSize={11} tickLine={false} />
-                <RechartsTooltip content={<CustomChartTooltip />} />
-                <Area type="monotone" dataKey="bankA" name="Bank A" stroke="#10B981" strokeWidth={1.8} fill="url(#gradBank)" />
-                <Area type="monotone" dataKey="insurerB" name="Insurer B" stroke="#8B5CF6" strokeWidth={1.8} fill="url(#gradInsurer)" />
-                <Area type="monotone" dataKey="lenderC" name="Lender C" stroke="#F59E0B" strokeWidth={1.8} fill="url(#gradLender)" />
-                <Area type="monotone" dataKey="collaborativeAlerts" name="Joint Risk Flag" stroke="#EF4444" strokeWidth={2.4} fill="url(#gradCollab)" />
-              </AreaChart>
-            </ResponsiveContainer>
+      {/* Principal Risk Visualization */}
+      <Card
+        title="Cross-Institution Signal Convergence"
+        subtitle="Illustrative simulation showing how 3 independent sub-threshold local signals synthesize into cross-institution confidence."
+        action={
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '12px', flexWrap: 'wrap' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <span style={{ width: '10px', height: '10px', borderRadius: '2px', backgroundColor: 'var(--primary)' }} />
+              <span style={{ fontWeight: 600 }}>Collaborative Synthesis</span>
+            </span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '5px', color: 'var(--text-muted)' }}>
+              <span style={{ width: '10px', height: '2px', backgroundColor: '#94A3B8' }} />
+              <span>Isolated Local Baselines (Sub-Threshold)</span>
+            </span>
+            <Badge variant="neutral" size="sm">Illustrative Simulation</Badge>
           </div>
-        </Card>
-
-        {/* Right Chart: Risk-Score Distribution Histogram */}
-        <Card
-          title="Risk Score Distribution"
-          subtitle="Score frequencies across 1,284 evaluated customer entities"
-        >
-          <div style={{ height: '230px', width: '100%' }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={distributionData} margin={{ top: 8, right: 10, left: -24, bottom: 0 }}>
-                <CartesianGrid stroke="rgba(255, 255, 255, 0.07)" strokeDasharray="2 3" vertical={false} />
-                <XAxis dataKey="band" stroke="var(--text-muted)" fontSize={11} tickLine={false} />
-                <YAxis stroke="var(--text-muted)" fontSize={11} tickLine={false} />
-                <RechartsTooltip content={<CustomChartTooltip />} />
-                <Bar dataKey="count" name="Evaluated Entities" radius={[4, 4, 0, 0]}>
-                  {distributionData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </Card>
-      </div>
-
-      {/* Row 3: Strips (Institution Network Health Strip + Differential Privacy Budget Gauge) */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '2fr 1fr',
-          gap: 'var(--space-2)'
-        }}
+        }
       >
-        {/* Left: Institution Network Health Strip */}
+        <div style={{ height: '260px', minHeight: '260px', width: '100%', marginTop: '10px' }}>
+          <ResponsiveContainer width="100%" height={260}>
+            <AreaChart data={convergenceData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <defs>
+                <linearGradient id="collabGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.25} />
+                  <stop offset="95%" stopColor="var(--primary)" stopOpacity={0.0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" vertical={false} />
+              <XAxis dataKey="period" stroke="var(--text-muted)" fontSize={11} tickLine={false} />
+              <YAxis stroke="var(--text-muted)" fontSize={11} tickLine={false} domain={[0, 100]} />
+              <RechartsTooltip content={<CustomChartTooltip />} />
+              <Area
+                type="monotone"
+                dataKey="collaborative"
+                name="Collaborative Risk"
+                stroke="var(--primary)"
+                strokeWidth={2.5}
+                fill="url(#collabGrad)"
+              />
+              <Area
+                type="monotone"
+                dataKey="bankA"
+                name="Bank A Local"
+                stroke="#0D9488"
+                strokeWidth={1.5}
+                strokeDasharray="4 4"
+                fill="none"
+              />
+              <Area
+                type="monotone"
+                dataKey="insurerB"
+                name="Insurer B Local"
+                stroke="#7C3AED"
+                strokeWidth={1.5}
+                strokeDasharray="4 4"
+                fill="none"
+              />
+              <Area
+                type="monotone"
+                dataKey="lenderC"
+                name="Lender C Local"
+                stroke="#D97706"
+                strokeWidth={1.5}
+                strokeDasharray="4 4"
+                fill="none"
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      </Card>
+
+      {/* Two Balanced Columns: Priority Investigation Queue & Node Status */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 360px), 1fr))', gap: '20px' }}>
+        {/* Column 1: Priority Queue */}
         <Card
-          title="Sovereign Participant Node Health"
-          subtitle="Zero raw feature exchange: Nodes compute partial logits on-premise"
+          title="Priority Investigation Queue"
+          subtitle="Top actionable cases ranked by severity, resolution state, and composite risk score."
           action={
             <Button
-              variant="outline"
-              size="xs"
+              variant="ghost"
+              size="sm"
+              onClick={() => onNavigate('risk_cases')}
+              iconRight={<ArrowRight size={12} />}
+              aria-label="View all risk cases"
+            >
+              All Cases
+            </Button>
+          }
+        >
+          {prioritizedQueue.length === 0 ? (
+            <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)' }}>
+              <CheckCircle2 size={24} color="var(--status-success)" style={{ margin: '0 auto 8px auto' }} />
+              <p style={{ fontSize: '13px', fontWeight: 600 }}>All cases resolved</p>
+              <p style={{ fontSize: '12px' }}>Zero high-risk escalations pending analyst intervention.</p>
+            </div>
+          ) : (
+            <div className="tm-table-container">
+              <table className="tm-table">
+                <thead>
+                  <tr>
+                    <th>Case ID</th>
+                    <th>Customer Ref</th>
+                    <th>Risk Tier</th>
+                    <th className="col-num">Risk Score</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {prioritizedQueue.map((c) => {
+                    const riskProps = getRiskVariant(c.riskLevel);
+                    return (
+                      <tr
+                        key={c.id}
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => {
+                          if (onSelectCase) onSelectCase(c);
+                          onNavigate('customer_investigation');
+                        }}
+                      >
+                        <td style={{ fontWeight: 600, color: 'var(--primary)' }}>
+                          {c.id}
+                        </td>
+                        <td style={{ fontFamily: 'var(--font-mono)', fontSize: '12px' }}>
+                          {c.customerId}
+                        </td>
+                        <td>
+                          <Badge variant={riskProps.variant} size="sm">
+                            {riskProps.label}
+                          </Badge>
+                        </td>
+                        <td className="cell-num" style={{ fontWeight: 600 }}>
+                          {formatRiskScore(c.score ?? c.confidence)}
+                        </td>
+                        <td>
+                          <Button
+                            variant="ghost"
+                            size="xs"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (onSelectCase) onSelectCase(c);
+                              onNavigate('customer_investigation');
+                            }}
+                            aria-label={`Investigate case ${c.id}`}
+                          >
+                            Investigate
+                          </Button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
+
+        {/* Column 2: Institutional Federation Status */}
+        <Card
+          title="Sovereign Federation Status"
+          subtitle="Physical process and sovereign database isolation across participating institutions."
+          action={
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => onNavigate('institutions')}
+              iconRight={<ArrowRight size={12} />}
+              aria-label="View sovereign network details"
             >
-              <span>Manage Nodes</span>
-              <ArrowRight size={11} />
+              Network Details
             </Button>
           }
         >
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '10px' }}>
-            {/* Node 1: Bank A */}
-            <div
-              onClick={() => onSelectInstitution && onSelectInstitution('BANK_A')}
-              style={{
-                padding: '12px 14px',
-                borderRadius: 'var(--radius-md)',
-                backgroundColor: 'var(--bg-surface-raised)',
-                border: '1px solid var(--border-default)',
-                cursor: 'pointer',
-                transition: 'border-color var(--transition-fast)'
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--primary)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border-default)'; }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
-                  <Building size={14} color="var(--primary-hover)" />
-                  <span style={{ fontWeight: 600, fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>BANK A NODE</span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {/* Bank A */}
+            <div style={{
+              padding: '12px 14px',
+              borderRadius: 'var(--radius-md)',
+              border: '1px solid var(--border-default)',
+              backgroundColor: 'var(--bg-subtle)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '12px',
+              flexWrap: 'wrap'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <Building2 size={16} color="var(--primary)" />
+                <div>
+                  <strong style={{ fontSize: '13px', color: 'var(--text-primary)' }}>Bank A (Port 8001)</strong>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                    250,000 synthetic records • Sovereign SQLite Repayments
+                  </div>
                 </div>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: 'var(--text-xs)', color: 'var(--success)' }}>
-                  <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--success)', display: 'inline-block' }} />
-                  Online
-                </span>
               </div>
-              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
-                Retail & Commercial Banking
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px', fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
-                <span>Sync: <strong style={{ color: 'var(--text-primary)' }}>38s ago</strong></span>
-                <Badge variant="cyan" size="sm">250k Synthetic</Badge>
-              </div>
+              <Badge variant="success" size="sm">Operational</Badge>
             </div>
 
-            {/* Node 2: Insurer B */}
-            <div
-              onClick={() => onSelectInstitution && onSelectInstitution('INSURER_B')}
-              style={{
-                padding: '12px 14px',
-                borderRadius: 'var(--radius-md)',
-                backgroundColor: 'var(--bg-surface-raised)',
-                border: '1px solid var(--border-default)',
-                cursor: 'pointer',
-                transition: 'border-color var(--transition-fast)'
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--accent-cyan)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border-default)'; }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
-                  <ShieldCheck size={14} color="var(--accent-cyan)" />
-                  <span style={{ fontWeight: 600, fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>INSURER B NODE</span>
+            {/* Insurer B */}
+            <div style={{
+              padding: '12px 14px',
+              borderRadius: 'var(--radius-md)',
+              border: '1px solid var(--border-default)',
+              backgroundColor: 'var(--bg-subtle)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '12px',
+              flexWrap: 'wrap'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <Building2 size={16} color="var(--accent-teal)" />
+                <div>
+                  <strong style={{ fontSize: '13px', color: 'var(--text-primary)' }}>Insurer B (Port 8002)</strong>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                    118,000 synthetic records • Sovereign SQLite Claims
+                  </div>
                 </div>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: 'var(--text-xs)', color: 'var(--success)' }}>
-                  <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--success)', display: 'inline-block' }} />
-                  Online
-                </span>
               </div>
-              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
-                General & Life Claims
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px', fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
-                <span>Sync: <strong style={{ color: 'var(--text-primary)' }}>52s ago</strong></span>
-                <Badge variant="cyan" size="sm">118k Synthetic</Badge>
-              </div>
+              <Badge variant="success" size="sm">Operational</Badge>
             </div>
 
-            {/* Node 3: Lender C */}
-            <div
-              onClick={() => onSelectInstitution && onSelectInstitution('LENDER_C')}
-              style={{
-                padding: '12px 14px',
-                borderRadius: 'var(--radius-md)',
-                backgroundColor: 'var(--bg-surface-raised)',
-                border: quarantinedLender ? '1px solid var(--danger)' : '1px solid var(--border-default)',
-                cursor: 'pointer',
-                transition: 'border-color var(--transition-fast)'
-              }}
-              onMouseEnter={(e) => { if (!quarantinedLender) e.currentTarget.style.borderColor = 'var(--warning)'; }}
-              onMouseLeave={(e) => { if (!quarantinedLender) e.currentTarget.style.borderColor = 'var(--border-default)'; }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
-                  <Activity size={14} color={quarantinedLender ? 'var(--danger)' : 'var(--warning)'} />
-                  <span style={{ fontWeight: 600, fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>LENDER C NODE</span>
-                </div>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: 'var(--text-xs)', color: quarantinedLender ? 'var(--danger)' : 'var(--success)' }}>
-                  <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: quarantinedLender ? 'var(--danger)' : 'var(--success)', display: 'inline-block' }} />
-                  {quarantinedLender ? 'Quarantined' : 'Online'}
-                </span>
-              </div>
-              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
-                Digital Credit & Loan Facilities
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px', fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
-                <span>Trust: <strong style={{ color: quarantinedLender ? 'var(--danger)' : 'var(--text-primary)' }}>{quarantinedLender ? '63%' : '89%'}</strong></span>
-                <Badge variant={quarantinedLender ? 'danger' : 'cyan'} size="sm">
-                  {quarantinedLender ? 'Quarantine Active' : '184k Synthetic'}
-                </Badge>
-              </div>
-            </div>
-          </div>
-        </Card>
-
-        {/* Right: Differential Privacy Budget Gauge */}
-        <Card
-          title="Differential Privacy Budget"
-          subtitle="Gaussian Mechanism (σ=1.0, δ=10⁻⁵)"
-          action={
-            <Button
-              variant="outline"
-              size="xs"
-              onClick={() => onNavigate('privacy_center')}
-            >
-              <span>Audit</span>
-            </Button>
-          }
-        >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-              <div>
-                <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>
-                  Cumulative ε Spent
-                </span>
-                <div style={{ fontSize: 'var(--text-xl)', fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)', marginTop: '2px' }}>
-                  1.42 <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', fontWeight: 400 }}>/ 3.0 ε cap</span>
+            {/* Lender C */}
+            <div style={{
+              padding: '12px 14px',
+              borderRadius: 'var(--radius-md)',
+              border: '1px solid var(--border-default)',
+              backgroundColor: quarantinedLender ? 'var(--status-danger-subtle)' : 'var(--bg-subtle)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '12px',
+              flexWrap: 'wrap'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <Building2 size={16} color={quarantinedLender ? 'var(--status-danger)' : 'var(--status-warning)'} />
+                <div>
+                  <strong style={{ fontSize: '13px', color: 'var(--text-primary)' }}>Lender C (Port 8003)</strong>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                    184,000 synthetic records • Sovereign SQLite Facilities
+                  </div>
                 </div>
               </div>
-              <Badge variant="success" size="sm">
-                47.3% Consumed
+              <Badge variant={quarantinedLender ? 'danger' : 'success'} size="sm">
+                {quarantinedLender ? 'Quarantined (Byzantine Isolation)' : 'Operational'}
               </Badge>
             </div>
-
-            {/* Gauge Progress Bar */}
-            <div
-              style={{
-                height: '8px',
-                width: '100%',
-                backgroundColor: 'var(--bg-app)',
-                borderRadius: 'var(--radius-full)',
-                overflow: 'hidden',
-                border: '1px solid var(--border-default)'
-              }}
-            >
-              <div
-                style={{
-                  width: '47.3%',
-                  height: '100%',
-                  backgroundColor: 'var(--primary)',
-                  borderRadius: 'var(--radius-full)'
-                }}
-              />
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
-              <span>Noise Calibration: <strong>Optimal (σ=1.0)</strong></span>
-              <span>Remaining: <strong style={{ color: 'var(--success)' }}>1.58 ε</strong></span>
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      {/* Row 4: High-Risk Cases Table (3/5) + Audit Trail Panel (2/5) */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '3fr 2fr',
-          gap: 'var(--space-2)'
-        }}
-      >
-        {/* Left: Recent High-Risk Cases Table */}
-        <Card
-          title="Priority Cross-Institution Cases"
-          subtitle="Entities triggering collaborative correlation across disparate nodes"
-          action={
-            <Button
-              variant="outline"
-              size="xs"
-              onClick={() => onNavigate('collaborative_risk')}
-            >
-              <span>View All Cases</span>
-              <ArrowRight size={11} />
-            </Button>
-          }
-        >
-          <div style={{ overflowX: 'auto', margin: '-6px -18px' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--text-xs)' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid var(--border-default)', textAlign: 'left' }}>
-                  <th style={{ padding: '8px 18px', color: 'var(--text-muted)', fontWeight: 600 }}>Case ID</th>
-                  <th style={{ padding: '8px 12px', color: 'var(--text-muted)', fontWeight: 600 }}>Risk Tier</th>
-                  <th style={{ padding: '8px 12px', color: 'var(--text-muted)', fontWeight: 600 }}>Confidence</th>
-                  <th style={{ padding: '8px 12px', color: 'var(--text-muted)', fontWeight: 600 }}>Nodes</th>
-                  <th style={{ padding: '8px 12px', color: 'var(--text-muted)', fontWeight: 600 }}>Status</th>
-                  <th style={{ padding: '8px 18px', textAlign: 'right', color: 'var(--text-muted)', fontWeight: 600 }}>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentCases.map((c) => {
-                  const isHigh = c.riskLevel === 'HIGH';
-                  const isCritical = c.riskLevel === 'CRITICAL';
-                  const isMed = c.riskLevel === 'MEDIUM';
-
-                  return (
-                    <tr
-                      key={c.id}
-                      style={{
-                        borderBottom: '1px solid var(--border-default)',
-                        transition: 'background-color var(--transition-fast)'
-                      }}
-                      onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-surface-hover)'; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
-                    >
-                      <td style={{ padding: '10px 18px', fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}>
-                          <span>{c.id}</span>
-                          {c.id === 'CASE-10482' && (
-                            <Badge variant="cyan" size="sm">Benchmark</Badge>
-                          )}
-                        </div>
-                      </td>
-
-                      <td style={{ padding: '10px 12px', whiteSpace: 'nowrap' }}>
-                        <Badge
-                          variant={isCritical ? 'risk-critical' : isHigh ? 'risk-high' : isMed ? 'risk-medium' : 'risk-low'}
-                          size="sm"
-                        >
-                          {c.riskLevel}
-                        </Badge>
-                      </td>
-
-                      <td style={{ padding: '10px 12px', fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
-                        {c.confidence || c.score}%
-                      </td>
-
-                      <td style={{ padding: '10px 12px', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
-                        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>A • B • C</span>
-                      </td>
-
-                      <td style={{ padding: '10px 12px', whiteSpace: 'nowrap' }}>
-                        <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-                          {c.status || 'NORMAL'}
-                        </span>
-                      </td>
-
-                      <td style={{ padding: '10px 18px', textAlign: 'right' }}>
-                        <Button
-                          variant="ghost"
-                          size="xs"
-                          onClick={() => onNavigate('customer_investigation')}
-                        >
-                          <Eye size={12} />
-                          <span>Inspect</span>
-                        </Button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </Card>
-
-        {/* Right: Cryptographic Audit Trail Panel */}
-        <Card
-          title="Cryptographic Audit Trail"
-          subtitle="Tamper-evident SHA-256 event ledger linked to genesis block"
-          action={
-            <Badge variant="success" size="sm">
-              <ShieldCheck size={11} style={{ marginRight: '3px' }} />
-              Chain Verified ({lastVerifiedTime})
-            </Badge>
-          }
-          footer={
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span>Genesis Hash: <code style={{ color: 'var(--text-primary)' }}>00000000...0000</code></span>
-              <Button
-                variant="ghost"
-                size="xs"
-                onClick={() => onNavigate('audit_trail')}
-              >
-                <span>Full Audit Ledger</span>
-                <ArrowRight size={11} />
-              </Button>
-            </div>
-          }
-        >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {recentAudit.map((log, idx) => {
-              const eventId = log.event_id || log.id || `EVT-${idx}`;
-              const fullHash = log.fullHash || log.hash || '0x00';
-              const truncHash = fullHash.length > 16
-                ? `${fullHash.slice(0, 8)}...${fullHash.slice(-6)}`
-                : fullHash;
-              const isCopied = copiedHash === eventId;
-
-              return (
-                <div
-                  key={eventId}
-                  style={{
-                    padding: '8px 10px',
-                    borderRadius: 'var(--radius-sm)',
-                    backgroundColor: 'var(--bg-surface-raised)',
-                    border: '1px solid var(--border-default)',
-                    fontSize: 'var(--text-xs)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: '8px'
-                  }}
-                >
-                  <div style={{ minWidth: 0, flex: 1 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
-                      <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
-                        {log.details || log.event || log.action || 'System Verification Event'}
-                      </span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-muted)', fontSize: '11px' }}>
-                      <span>{log.institution || 'COORDINATOR'}</span>
-                      <span>•</span>
-                      <span>{log.timestamp || 'Just now'}</span>
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
-                    <code
-                      style={{
-                        padding: '2px 5px',
-                        backgroundColor: 'var(--bg-app)',
-                        borderRadius: 'var(--radius-xs)',
-                        border: '1px solid var(--border-default)',
-                        color: 'var(--accent-cyan)',
-                        fontSize: '11px'
-                      }}
-                    >
-                      {truncHash}
-                    </code>
-                    <button
-                      onClick={() => handleCopyHash(fullHash, eventId)}
-                      title="Copy full SHA-256 block hash"
-                      style={{
-                        padding: '3px 4px',
-                        borderRadius: 'var(--radius-xs)',
-                        color: isCopied ? 'var(--success)' : 'var(--text-muted)',
-                        backgroundColor: 'transparent'
-                      }}
-                    >
-                      {isCopied ? <Check size={12} strokeWidth={2.4} /> : <Copy size={12} />}
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
           </div>
         </Card>
       </div>

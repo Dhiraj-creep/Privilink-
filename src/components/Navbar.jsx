@@ -1,16 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Bell,
   Play,
   ChevronDown,
-  Lock,
   LogOut,
   Search,
   Check,
-  Building,
-  KeyRound
+  Building2,
+  Shield,
+  ShieldCheck,
+  Menu
 } from 'lucide-react';
-import { Badge } from './ui/Badge';
+import GlobalSearch from './GlobalSearch';
 
 export default function Navbar({
   currentRole,
@@ -22,22 +23,41 @@ export default function Navbar({
   alertCount = 0,
   notifications = [],
   backendConnected = false,
-  searchTerm = '',
-  onSearchChange
+  appMode = 'app',
+  onToggleAppMode,
+  onToggleMobileMenu,
+  cases = [],
+  onSelectCase,
+  onNavigate
 }) {
   const [showRoleMenu, setShowRoleMenu] = useState(false);
   const [showNotificationMenu, setShowNotificationMenu] = useState(false);
-  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showSearchModal, setShowSearchModal] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
-  const [authError, setAuthError] = useState(null);
 
-  // Keyboard shortcut Ctrl+K focus on search
+  const roleMenuRef = useRef(null);
+  const notifMenuRef = useRef(null);
+
+  // Close menus on outside click
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (roleMenuRef.current && !roleMenuRef.current.contains(e.target)) {
+        setShowRoleMenu(false);
+      }
+      if (notifMenuRef.current && !notifMenuRef.current.contains(e.target)) {
+        setShowNotificationMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, []);
+
+  // Keyboard shortcut Ctrl+K / Cmd+K opens GlobalSearch
   useEffect(() => {
     const handleKeyDown = (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
-        const searchInput = document.getElementById('tm-global-search');
-        if (searchInput) searchInput.focus();
+        setShowSearchModal(prev => !prev);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -49,9 +69,8 @@ export default function Navbar({
       id: 'RISK_ANALYST',
       username: 'analyst',
       title: 'Risk Analyst',
-      subtitle: 'Cross-institution case investigations & collaborative explainability HUD',
-      scope: 'Global Read / Step-Up KYC Dispatch',
-      badge: 'Analyst Clearance'
+      subtitle: 'Global case investigation & Step-Up KYC dispatch',
+      badge: 'Analyst'
     },
     {
       id: 'INSTITUTION_ADMIN_BANK',
@@ -59,9 +78,8 @@ export default function Navbar({
       username: 'bank_admin',
       institutionId: 'BANK_A',
       title: 'Institution Admin (Bank A)',
-      subtitle: 'Sovereign Bank A customer repository only (HTTP 403 on Insurer & Lender)',
-      scope: 'Sovereign Bank A Only',
-      badge: 'Bank A Sovereign'
+      subtitle: 'Sovereign Bank A customer records (HTTP 403 on peers)',
+      badge: 'Bank A'
     },
     {
       id: 'INSTITUTION_ADMIN_INSURER',
@@ -69,9 +87,8 @@ export default function Navbar({
       username: 'insurer_admin',
       institutionId: 'INSURER_B',
       title: 'Institution Admin (Insurer B)',
-      subtitle: 'Sovereign Insurer B policy repository only (HTTP 403 on Bank & Lender)',
-      scope: 'Sovereign Insurer B Only',
-      badge: 'Insurer B Sovereign'
+      subtitle: 'Sovereign Insurer B policies (HTTP 403 on peers)',
+      badge: 'Insurer B'
     },
     {
       id: 'INSTITUTION_ADMIN_LENDER',
@@ -79,636 +96,476 @@ export default function Navbar({
       username: 'lender_admin',
       institutionId: 'LENDER_C',
       title: 'Institution Admin (Lender C)',
-      subtitle: 'Sovereign Lender C credit repository only (HTTP 403 on Bank & Insurer)',
-      scope: 'Sovereign Lender C Only',
-      badge: 'Lender C Sovereign'
+      subtitle: 'Sovereign Lender C credit records (HTTP 403 on peers)',
+      badge: 'Lender C'
     },
     {
       id: 'COMPLIANCE_OFFICER',
       role: 'COMPLIANCE_OFFICER',
       username: 'compliance',
       title: 'Compliance Officer',
-      subtitle: 'Cryptographic audit verification, privacy budgets & case resolution clearance',
-      scope: 'Full Compliance & Case Clearance',
-      badge: 'Compliance Officer'
+      subtitle: 'Audit chain verification & case clearance resolution',
+      badge: 'Compliance'
     },
     {
       id: 'NETWORK_ADMIN',
       role: 'NETWORK_ADMIN',
       username: 'admin',
       title: 'Network Admin',
-      subtitle: 'Global topology, Byzantine defense, SecAgg orchestrations & participant quarantine',
-      scope: 'Full Administrative Clearance',
-      badge: 'Network Root'
+      subtitle: 'Topology management, Byzantine defense & quarantine',
+      badge: 'Admin'
     }
   ];
 
-  const activePersona = demoPersonas.find(p =>
-    p.username === currentUser?.username ||
-    (p.role === currentRole && (!p.institutionId || p.institutionId === currentUser?.institution_id))
-  ) || demoPersonas[0];
-
-  const handleSwitchToPersona = async (persona) => {
+  const handleSelectPersona = async (persona) => {
     setIsAuthenticating(true);
-    setAuthError(null);
     try {
       if (onPersonaLogin) {
         await onPersonaLogin(persona.username);
       }
       setShowRoleMenu(false);
     } catch (err) {
-      setAuthError(err.message || 'Authentication failed');
+      console.error('Persona authentication failed:', err);
     } finally {
       setIsAuthenticating(false);
     }
   };
 
-  const getTabBreadcrumb = () => {
+  const getBreadcrumb = () => {
     switch (currentTab) {
-      case 'overview':
-        return 'Overview Dashboard';
-      case 'collaborative_risk':
-        return 'Collaborative Risk Cases';
-      case 'customer_investigation':
-        return 'Case Investigation';
-      case 'institutions':
-        return 'Institution Network';
-      case 'model_collaboration':
-        return 'Model Collaboration';
+      case 'overview': return 'Overview';
+      case 'risk_cases':
+      case 'collaborative_risk': return 'Risk Cases';
+      case 'customer_investigation': return 'Risk Cases / Investigation';
+      case 'institutions': return 'Institutions';
+      case 'security_privacy':
       case 'privacy_center':
-        return 'Differential Privacy';
-      case 'audit_trail':
-        return 'Cryptographic Audit';
-      case 'simulation_lab':
-        return 'Simulation Lab';
-      case 'secure_aggregation':
-        return 'Secure Aggregation Lab';
-      case 'entity_resolution':
-        return 'Private Entity PSI';
       case 'trust_security':
-        return 'Trust & Security';
-      case 'architecture_scope':
-        return 'Architecture & Scope';
-      default:
-        return 'Dashboard';
+      case 'model_collaboration': return 'Security & Privacy';
+      case 'audit_trail': return 'Audit Trail';
+      case 'advanced_demo':
+      case 'simulation_lab':
+      case 'secure_aggregation':
+      case 'entity_resolution': return 'Demo Labs';
+      case 'architecture_scope': return 'Architecture & Scope';
+      default: return 'Overview';
     }
   };
 
   return (
-    <header
-      className="tm-topbar"
-      style={{
-        height: '56px',
-        backgroundColor: 'var(--bg-surface)',
-        borderBottom: '1px solid var(--border-default)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '0 20px',
-        position: 'sticky',
-        top: 0,
-        zIndex: 40,
-        gap: '16px'
-      }}
-    >
-      {/* Left: Breadcrumbs & Node Label */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '14px', minWidth: 0 }}>
-        {/* Breadcrumb Hierarchy */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            fontSize: 'var(--text-sm)',
-            whiteSpace: 'nowrap'
-          }}
-        >
-          <span style={{ color: 'var(--text-muted)' }}>TrustMesh</span>
-          <span style={{ color: 'var(--border-default)' }}>/</span>
-          <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{getTabBreadcrumb()}</span>
-        </div>
-
-        {/* Institution / Node Label */}
-        <div
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '2px 8px',
-            borderRadius: 'var(--radius-xs)',
-            backgroundColor: 'var(--bg-surface-raised)',
-            border: '1px solid var(--border-default)',
-            fontSize: 'var(--text-xs)',
-            color: 'var(--text-secondary)'
-          }}
-        >
-          <Building size={11} color="var(--primary-hover)" />
-          <span style={{ fontWeight: 500 }}>
-            {currentUser?.institution_id
-              ? `${currentUser.institution_id} Node`
-              : backendConnected
-              ? 'Coordinator Node (Port 8000)'
-              : 'Coordinator Node (Local Runtime)'}
-          </span>
-        </div>
-      </div>
-
-      {/* Center: Global Search with Ctrl+K */}
-      <div style={{ flex: 1, maxWidth: '380px', position: 'relative' }}>
-        <Search
-          size={14}
-          style={{
-            position: 'absolute',
-            left: '10px',
-            top: '50%',
-            transform: 'translateY(-50%)',
-            color: 'var(--text-muted)',
-            pointerEvents: 'none'
-          }}
-        />
-        <input
-          id="tm-global-search"
-          type="text"
-          placeholder="Search entities, cases, hashes..."
-          value={searchTerm}
-          onChange={(e) => onSearchChange && onSearchChange(e.target.value)}
-          style={{
-            width: '100%',
-            height: '32px',
-            paddingLeft: '32px',
-            paddingRight: '60px',
-            fontSize: 'var(--text-sm)',
-            backgroundColor: 'var(--bg-app)',
-            border: '1px solid var(--border-default)',
-            borderRadius: 'var(--radius-sm)',
-            color: 'var(--text-primary)'
-          }}
-        />
-        <div
-          style={{
-            position: 'absolute',
-            right: '8px',
-            top: '50%',
-            transform: 'translateY(-50%)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '2px',
-            padding: '1px 5px',
-            borderRadius: 'var(--radius-xs)',
-            backgroundColor: 'var(--bg-surface-raised)',
-            border: '1px solid var(--border-default)',
-            fontSize: '10px',
-            fontFamily: 'var(--font-mono)',
-            color: 'var(--text-muted)',
-            pointerEvents: 'none'
-          }}
-        >
-          <span>Ctrl</span>
-          <span>K</span>
-        </div>
-      </div>
-
-      {/* Right Controls: Privacy Posture Pill + Role Switcher + Tour + Alerts + User */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
-        {/* Persistent Privacy Posture Pill */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '7px',
-            padding: '4px 10px',
-            backgroundColor: 'rgba(34, 197, 94, 0.08)',
-            border: '1px solid rgba(34, 197, 94, 0.25)',
-            borderRadius: 'var(--radius-full)',
-            fontSize: 'var(--text-xs)',
-            fontWeight: 500,
-            color: 'var(--text-primary)'
-          }}
-        >
-          <Lock size={12} color="var(--success)" />
-          <span>Raw data never leaves this node</span>
-          <span
-            style={{
-              width: '6px',
-              height: '6px',
-              borderRadius: '50%',
-              backgroundColor: 'var(--success)',
-              boxShadow: '0 0 6px var(--success)',
-              display: 'inline-block'
-            }}
-          />
-        </div>
-
-        {/* 3-Min Script Button */}
-        {onStartDemoTour && (
+    <>
+      <header
+        className="tm-topbar"
+        style={{
+          height: '56px',
+          backgroundColor: '#FFFFFF',
+          borderBottom: '1px solid var(--border-default)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '0 16px',
+          position: 'sticky',
+          top: 0,
+          zIndex: 50,
+          gap: '12px'
+        }}
+      >
+        {/* Left: Hamburger (mobile), Brand Logo, and Desktop Breadcrumb */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, flexShrink: 0 }}>
+          {/* Mobile Drawer Button */}
           <button
-            onClick={onStartDemoTour}
+            onClick={onToggleMobileMenu}
+            className="tm-mobile-menu-btn"
+            aria-label="Open navigation menu"
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              height: '32px',
-              padding: '0 12px',
+              width: '34px',
+              height: '34px',
               borderRadius: 'var(--radius-sm)',
-              backgroundColor: 'var(--primary-subtle)',
-              color: 'var(--primary)',
-              border: '1px solid var(--primary-border)',
-              fontSize: 'var(--text-xs)',
-              fontWeight: 600,
-              cursor: 'pointer'
-            }}
-            title="Launch 3-minute hackathon pitch script"
-          >
-            <Play size={11} fill="currentColor" />
-            <span>Pitch Script (3m)</span>
-          </button>
-        )}
-
-        {/* Role Switcher Dropdown */}
-        <div style={{ position: 'relative' }}>
-          <button
-            onClick={() => {
-              setShowRoleMenu(!showRoleMenu);
-              setShowNotificationMenu(false);
-              setShowUserMenu(false);
-            }}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              height: '32px',
-              padding: '0 10px',
-              backgroundColor: 'var(--bg-surface-raised)',
               border: '1px solid var(--border-default)',
-              borderRadius: 'var(--radius-sm)',
+              backgroundColor: '#FFFFFF',
               color: 'var(--text-primary)',
-              fontSize: 'var(--text-xs)'
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
             }}
           >
-            <KeyRound size={12} color="var(--primary-hover)" />
-            <span style={{ color: 'var(--text-muted)' }}>Role:</span>
-            <Badge variant="primary" size="sm">
-              {activePersona.title}
-            </Badge>
-            <ChevronDown size={12} color="var(--text-muted)" />
+            <Menu size={18} />
           </button>
 
-          {showRoleMenu && (
+          {/* Brand Logo */}
+          <div
+            onClick={() => onToggleAppMode && onToggleAppMode('landing')}
+            style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
+            title="Return to Landing Page"
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && onToggleAppMode) onToggleAppMode('landing');
+            }}
+          >
             <div
               style={{
-                position: 'absolute',
-                right: 0,
-                top: 'calc(100% + 6px)',
-                width: '360px',
-                backgroundColor: 'var(--bg-surface-raised)',
-                border: '1px solid var(--border-default)',
+                width: '30px',
+                height: '30px',
                 borderRadius: 'var(--radius-md)',
-                boxShadow: 'var(--shadow-lg)',
-                zIndex: 60,
-                padding: '12px',
-                animation: 'fadeIn var(--transition-fast)'
+                backgroundColor: 'var(--primary-subtle)',
+                border: '1px solid var(--primary-border)',
+                color: 'var(--primary)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0
               }}
             >
-              <div
-                style={{
-                  paddingBottom: '8px',
-                  borderBottom: '1px solid var(--border-default)',
-                  marginBottom: '8px',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center'
-                }}
-              >
-                <div>
-                  <div
-                    style={{
-                      fontSize: 'var(--text-xs)',
-                      fontWeight: 700,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em',
-                      color: 'var(--text-muted)'
-                    }}
-                  >
-                    Role-Based Access Control (RBAC)
-                  </div>
-                  <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                    Active Identity: <strong style={{ color: 'var(--text-primary)' }}>{currentUser?.username || activePersona.username}</strong>
-                  </div>
-                </div>
-                <Badge variant="success" size="sm">
-                  HMAC Session
-                </Badge>
-              </div>
+              <Shield size={16} strokeWidth={2.4} />
+            </div>
+            <div>
+              <span style={{ fontWeight: 800, fontSize: '14px', color: 'var(--text-primary)', letterSpacing: '-0.02em', display: 'block', lineHeight: 1.1 }}>
+                TRUSTMESH
+              </span>
+              <span className="tm-desktop-only" style={{ fontSize: '9px', fontWeight: 600, color: 'var(--text-muted)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                Risk Intelligence
+              </span>
+            </div>
+          </div>
 
-              {authError && (
-                <div
+          <div className="tm-desktop-only" style={{ width: '1px', height: '20px', backgroundColor: 'var(--border-default)', margin: '0 4px' }} />
+
+          {/* Breadcrumb Hierarchy (Desktop Only) */}
+          <div className="tm-desktop-only tm-nav-breadcrumb" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: 'var(--text-xs)' }}>
+            <span style={{ color: 'var(--text-muted)' }}>Workspace</span>
+            <span style={{ color: 'var(--border-medium)' }}>/</span>
+            <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{getBreadcrumb()}</span>
+          </div>
+
+          {/* Node Connectivity Badge (Tablet & Desktop) */}
+          <div
+            className="tm-tablet-desktop-only tm-nav-node-badge"
+            style={{
+              alignItems: 'center',
+              gap: '6px',
+              padding: '2px 8px',
+              borderRadius: 'var(--radius-xs)',
+              backgroundColor: 'var(--bg-subtle)',
+              border: '1px solid var(--border-default)',
+              fontSize: '11px',
+              color: 'var(--text-secondary)'
+            }}
+          >
+            <Building2 size={12} color="var(--primary)" />
+            <span style={{ fontWeight: 500 }}>
+              {currentUser?.institution_id
+                ? `${currentUser.institution_id} Node`
+                : backendConnected
+                ? 'Coordinator Node'
+                : 'Local Mode'}
+            </span>
+            <span
+              style={{
+                width: '6px',
+                height: '6px',
+                borderRadius: '50%',
+                backgroundColor: backendConnected ? 'var(--status-success)' : 'var(--status-warning)'
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Center: Global Search Input (Desktop) & Search Trigger (Mobile) */}
+        <div style={{ flex: 1, maxWidth: '360px', minWidth: 0, display: 'flex', justifyContent: 'center' }}>
+          {/* Desktop Search Bar */}
+          <button
+            onClick={() => setShowSearchModal(true)}
+            className="tm-desktop-search-trigger"
+            aria-label="Search cases by ID, customer ref, or risk tier (Ctrl+K)"
+            style={{
+              width: '100%',
+              height: '32px',
+              padding: '0 10px',
+              fontSize: '12px',
+              backgroundColor: 'var(--bg-subtle)',
+              border: '1px solid var(--border-default)',
+              borderRadius: 'var(--radius-sm)',
+              color: 'var(--text-muted)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              cursor: 'pointer',
+              textAlign: 'left'
+            }}
+          >
+            <span style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <Search size={14} color="var(--text-muted)" style={{ flexShrink: 0 }} />
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Search cases by ID, customer ref...</span>
+            </span>
+            <span
+              style={{
+                fontSize: '10px',
+                fontFamily: 'var(--font-mono)',
+                padding: '1px 5px',
+                borderRadius: 'var(--radius-xs)',
+                backgroundColor: '#FFFFFF',
+                border: '1px solid var(--border-default)',
+                color: 'var(--text-muted)',
+                flexShrink: 0
+              }}
+            >
+              Ctrl+K
+            </span>
+          </button>
+        </div>
+
+        {/* Right: Actions, Tour, Alerts, Role Switcher */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+          {/* Mobile Search Icon Button */}
+          <button
+            onClick={() => setShowSearchModal(true)}
+            className="tm-mobile-search-btn"
+            aria-label="Search cases and institutions"
+            style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: 'var(--radius-sm)',
+              border: '1px solid var(--border-default)',
+              backgroundColor: '#FFFFFF',
+              color: 'var(--text-secondary)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          >
+            <Search size={15} />
+          </button>
+
+          {/* Landing Page Link (Desktop Only) */}
+          <button
+            onClick={() => onToggleAppMode && onToggleAppMode(appMode === 'app' ? 'landing' : 'app')}
+            className="btn btn-ghost btn-sm tm-desktop-only"
+            style={{ fontSize: '12px' }}
+            aria-label={appMode === 'app' ? 'Switch to Landing Page view' : 'Return to Enterprise Workspace'}
+          >
+            {appMode === 'app' ? 'Landing View' : 'Workspace'}
+          </button>
+
+          {/* Guided Tour Trigger (Desktop & Tablet) */}
+          <button
+            onClick={onStartDemoTour}
+            className="btn btn-secondary btn-sm tm-tablet-desktop-only"
+            style={{ gap: '5px' }}
+            title="Start Interactive Product Tour"
+            aria-label="Start product tour"
+          >
+            <Play size={11} fill="var(--primary)" stroke="var(--primary)" />
+            <span>Tour</span>
+          </button>
+
+          {/* Notification Bell Dropdown */}
+          <div style={{ position: 'relative' }} ref={notifMenuRef}>
+            <button
+              onClick={() => setShowNotificationMenu(!showNotificationMenu)}
+              aria-label={`View system notifications (${alertCount} unread)`}
+              style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: 'var(--radius-sm)',
+                border: '1px solid var(--border-default)',
+                backgroundColor: '#FFFFFF',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--text-secondary)',
+                cursor: 'pointer',
+                position: 'relative'
+              }}
+            >
+              <Bell size={15} />
+              {alertCount > 0 && (
+                <span
                   style={{
-                    padding: '6px 8px',
-                    backgroundColor: 'var(--danger-subtle)',
-                    color: 'var(--danger)',
-                    border: '1px solid var(--danger-border)',
-                    borderRadius: 'var(--radius-xs)',
-                    fontSize: 'var(--text-xs)',
-                    marginBottom: '8px'
+                    position: 'absolute',
+                    top: '-3px',
+                    right: '-3px',
+                    width: '15px',
+                    height: '15px',
+                    borderRadius: '50%',
+                    backgroundColor: 'var(--status-danger)',
+                    color: '#FFFFFF',
+                    fontSize: '9px',
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
                   }}
                 >
-                  {authError}
-                </div>
+                  {alertCount}
+                </span>
               )}
+            </button>
 
-              <div style={{ maxHeight: '280px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                {demoPersonas.map((p) => {
-                  const isCurrent =
-                    currentUser?.username === p.username || activePersona.username === p.username;
-                  return (
+            {showNotificationMenu && (
+              <div
+                style={{
+                  position: 'absolute',
+                  right: 0,
+                  top: 'calc(100% + 8px)',
+                  width: 'min(320px, calc(100vw - 32px))',
+                  backgroundColor: '#FFFFFF',
+                  borderRadius: 'var(--radius-lg)',
+                  border: '1px solid var(--border-default)',
+                  boxShadow: 'var(--shadow-lg)',
+                  padding: '12px',
+                  zIndex: 100
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', paddingBottom: '8px', borderBottom: '1px solid var(--border-default)' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)' }}>System Notifications</span>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{notifications.length} alerts</span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '240px', overflowY: 'auto' }}>
+                  {notifications.map((n) => (
                     <div
-                      key={p.username}
-                      onClick={() => !isAuthenticating && handleSwitchToPersona(p)}
+                      key={n.id}
                       style={{
                         padding: '8px 10px',
                         borderRadius: 'var(--radius-sm)',
-                        cursor: isAuthenticating ? 'wait' : 'pointer',
-                        backgroundColor: isCurrent ? 'var(--primary-subtle)' : 'transparent',
-                        border: isCurrent ? '1px solid var(--primary)' : '1px solid transparent',
-                        transition: 'all var(--transition-fast)'
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!isCurrent) {
-                          e.currentTarget.style.backgroundColor = 'var(--bg-surface-hover)';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!isCurrent) {
-                          e.currentTarget.style.backgroundColor = 'transparent';
-                        }
+                        backgroundColor: n.type === 'danger' ? 'var(--status-danger-subtle)' : n.type === 'warning' ? 'var(--status-warning-subtle)' : 'var(--bg-subtle)',
+                        border: `1px solid ${n.type === 'danger' ? 'var(--status-danger-border)' : n.type === 'warning' ? 'var(--status-warning-border)' : 'var(--border-default)'}`,
+                        fontSize: '11px'
                       }}
                     >
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span
-                          style={{
-                            fontWeight: 600,
-                            fontSize: 'var(--text-sm)',
-                            color: isCurrent ? 'var(--primary-hover)' : 'var(--text-primary)'
-                          }}
-                        >
-                          {p.title}
-                        </span>
-                        {isCurrent ? (
-                          <span style={{ fontSize: 'var(--text-xs)', color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '2px' }}>
-                            <Check size={11} strokeWidth={2.4} /> Active
-                          </span>
-                        ) : (
-                          <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-                            {p.username}
-                          </span>
-                        )}
+                        <strong style={{ color: 'var(--text-primary)' }}>{n.title}</strong>
+                        <span style={{ color: 'var(--text-muted)', fontSize: '10px' }}>{n.time}</span>
                       </div>
-                      <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: '2px 0', lineHeight: 1.3 }}>
-                        {p.subtitle}
-                      </p>
-                      <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-                        Scope: {p.scope}
-                      </div>
+                      <p style={{ color: 'var(--text-secondary)', marginTop: '2px', lineHeight: 1.35 }}>{n.detail}</p>
                     </div>
-                  );
-                })}
-              </div>
-
-              {currentUser && onLogout && (
-                <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid var(--border-default)', display: 'flex', justifyContent: 'flex-end' }}>
-                  <button
-                    onClick={() => {
-                      onLogout();
-                      setShowRoleMenu(false);
-                    }}
-                    style={{
-                      fontSize: 'var(--text-xs)',
-                      padding: '4px 8px',
-                      color: 'var(--danger)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      borderRadius: 'var(--radius-xs)'
-                    }}
-                  >
-                    <LogOut size={12} />
-                    Sign Out Session
-                  </button>
+                  ))}
                 </div>
-              )}
-            </div>
-          )}
-        </div>
+              </div>
+            )}
+          </div>
 
-        {/* Notifications Bell */}
-        <div style={{ position: 'relative' }}>
-          <button
-            onClick={() => {
-              setShowNotificationMenu(!showNotificationMenu);
-              setShowRoleMenu(false);
-              setShowUserMenu(false);
-            }}
-            style={{
-              position: 'relative',
-              width: '32px',
-              height: '32px',
-              borderRadius: 'var(--radius-sm)',
-              border: '1px solid var(--border-default)',
-              backgroundColor: showNotificationMenu ? 'var(--bg-surface-hover)' : 'var(--bg-surface-raised)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'var(--text-primary)'
-            }}
-            title="Network Alerts"
-          >
-            <Bell size={15} />
-            {alertCount > 0 && (
-              <span
+          {/* Persona Switcher / Role Menu */}
+          <div style={{ position: 'relative' }} ref={roleMenuRef}>
+            <button
+              onClick={() => setShowRoleMenu(!showRoleMenu)}
+              aria-label={`Current role: ${currentUser?.title || currentRole}. Click to switch role`}
+              className="tm-role-selector-btn"
+              style={{
+                height: '32px',
+                padding: '0 8px',
+                borderRadius: 'var(--radius-sm)',
+                border: '1px solid var(--border-default)',
+                backgroundColor: '#FFFFFF',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                cursor: 'pointer',
+                fontSize: '12px',
+                color: 'var(--text-primary)',
+                fontWeight: 500
+              }}
+            >
+              <ShieldCheck size={14} color="var(--primary)" style={{ flexShrink: 0 }} />
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {currentUser?.title || currentRole}
+              </span>
+              <ChevronDown size={12} color="var(--text-muted)" style={{ flexShrink: 0 }} />
+            </button>
+
+            {showRoleMenu && (
+              <div
                 style={{
                   position: 'absolute',
-                  top: '-3px',
-                  right: '-3px',
-                  backgroundColor: 'var(--danger)',
-                  color: '#FFFFFF',
-                  borderRadius: 'var(--radius-full)',
-                  fontSize: '9px',
-                  fontWeight: 700,
-                  width: '14px',
-                  height: '14px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
+                  right: 0,
+                  top: 'calc(100% + 8px)',
+                  width: 'min(310px, calc(100vw - 32px))',
+                  backgroundColor: '#FFFFFF',
+                  borderRadius: 'var(--radius-lg)',
+                  border: '1px solid var(--border-default)',
+                  boxShadow: 'var(--shadow-lg)',
+                  padding: '8px',
+                  zIndex: 100
                 }}
               >
-                {alertCount}
-              </span>
-            )}
-          </button>
+                <div style={{ padding: '6px 10px 8px 10px', borderBottom: '1px solid var(--border-default)', marginBottom: '6px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                    Switch Authenticated Role
+                  </span>
+                  <p style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                    Demonstrates server-enforced boundary isolation and permissions.
+                  </p>
+                </div>
 
-          {showNotificationMenu && (
-            <div
-              style={{
-                position: 'absolute',
-                right: 0,
-                top: 'calc(100% + 6px)',
-                width: '320px',
-                backgroundColor: 'var(--bg-surface-raised)',
-                border: '1px solid var(--border-default)',
-                borderRadius: 'var(--radius-md)',
-                boxShadow: 'var(--shadow-lg)',
-                zIndex: 60,
-                padding: '12px',
-                animation: 'fadeIn var(--transition-fast)'
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                <span style={{ fontWeight: 600, fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>
-                  Network Alerts
-                </span>
-                <Badge variant="cyan" size="sm">
-                  Live Stream
-                </Badge>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '280px', overflowY: 'auto' }}>
-                {notifications.map((n) => (
-                  <div
-                    key={n.id}
-                    style={{
-                      padding: '8px 10px',
-                      borderRadius: 'var(--radius-sm)',
-                      backgroundColor:
-                        n.type === 'danger'
-                          ? 'var(--danger-subtle)'
-                          : n.type === 'warning'
-                          ? 'var(--warning-subtle)'
-                          : 'var(--bg-surface)',
-                      border: '1px solid var(--border-default)',
-                      fontSize: 'var(--text-xs)'
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 600, marginBottom: '2px' }}>
-                      <span
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                  {demoPersonas.map((p) => {
+                    const isCurrent = currentUser?.username === p.username;
+                    return (
+                      <button
+                        key={p.username}
+                        onClick={() => handleSelectPersona(p)}
+                        disabled={isAuthenticating}
                         style={{
-                          color:
-                            n.type === 'danger'
-                              ? 'var(--danger)'
-                              : n.type === 'warning'
-                              ? 'var(--warning)'
-                              : 'var(--text-primary)'
+                          padding: '8px 10px',
+                          borderRadius: 'var(--radius-sm)',
+                          backgroundColor: isCurrent ? 'var(--primary-subtle)' : 'transparent',
+                          border: 'none',
+                          textAlign: 'left',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: '8px',
+                          transition: 'background-color var(--transition-fast)'
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!isCurrent) e.currentTarget.style.backgroundColor = 'var(--bg-subtle)';
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!isCurrent) e.currentTarget.style.backgroundColor = 'transparent';
                         }}
                       >
-                        {n.title}
-                      </span>
-                      <span style={{ color: 'var(--text-muted)', fontSize: '10px' }}>{n.time}</span>
-                    </div>
-                    <p style={{ color: 'var(--text-secondary)', lineHeight: 1.35, margin: 0 }}>{n.detail}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* User Avatar Menu */}
-        <div style={{ position: 'relative' }}>
-          <button
-            onClick={() => {
-              setShowUserMenu(!showUserMenu);
-              setShowRoleMenu(false);
-              setShowNotificationMenu(false);
-            }}
-            style={{
-              width: '32px',
-              height: '32px',
-              borderRadius: 'var(--radius-full)',
-              backgroundColor: 'var(--bg-surface-raised)',
-              border: '1.5px solid var(--primary)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'var(--text-primary)',
-              fontWeight: 700,
-              fontSize: 'var(--text-xs)',
-              cursor: 'pointer'
-            }}
-            title={currentUser?.username || 'User Session'}
-          >
-            {(currentUser?.username || 'A')[0].toUpperCase()}
-          </button>
-
-          {showUserMenu && (
-            <div
-              style={{
-                position: 'absolute',
-                right: 0,
-                top: 'calc(100% + 6px)',
-                width: '220px',
-                backgroundColor: 'var(--bg-surface-raised)',
-                border: '1px solid var(--border-default)',
-                borderRadius: 'var(--radius-md)',
-                boxShadow: 'var(--shadow-lg)',
-                zIndex: 60,
-                padding: '10px',
-                animation: 'fadeIn var(--transition-fast)'
-              }}
-            >
-              <div style={{ paddingBottom: '8px', borderBottom: '1px solid var(--border-default)', marginBottom: '6px' }}>
-                <div style={{ fontWeight: 600, fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>
-                  {currentUser?.username || activePersona.username}
+                        <div>
+                          <div style={{ fontSize: '12px', fontWeight: 600, color: isCurrent ? 'var(--primary)' : 'var(--text-primary)' }}>
+                            {p.title}
+                          </div>
+                          <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '1px' }}>
+                            {p.subtitle}
+                          </div>
+                        </div>
+                        {isCurrent && <Check size={14} color="var(--primary)" />}
+                      </button>
+                    );
+                  })}
                 </div>
-                <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
-                  {activePersona.badge}
-                </div>
-              </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontSize: 'var(--text-xs)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', color: 'var(--text-secondary)' }}>
-                  <span>Node:</span>
-                  <span style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
-                    {currentUser?.institution_id || 'Coordinator'}
-                  </span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', color: 'var(--text-secondary)' }}>
-                  <span>Status:</span>
-                  <span style={{ color: 'var(--success)' }}>Authenticated</span>
-                </div>
-              </div>
-
-              {currentUser && onLogout && (
-                <div style={{ marginTop: '8px', paddingTop: '6px', borderTop: '1px solid var(--border-default)' }}>
+                <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid var(--border-default)', display: 'flex', justifyContent: 'flex-end' }}>
                   <button
-                    onClick={() => {
-                      onLogout();
-                      setShowUserMenu(false);
-                    }}
-                    style={{
-                      width: '100%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      padding: '6px 8px',
-                      color: 'var(--danger)',
-                      fontSize: 'var(--text-xs)',
-                      borderRadius: 'var(--radius-xs)',
-                      backgroundColor: 'transparent'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = 'var(--danger-subtle)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = 'transparent';
-                    }}
+                    onClick={onLogout}
+                    className="btn btn-ghost btn-sm"
+                    style={{ fontSize: '11px', color: 'var(--status-danger)' }}
+                    aria-label="Sign out"
                   >
                     <LogOut size={12} />
-                    <span>Log Out</span>
+                    <span>Sign Out</span>
                   </button>
                 </div>
-              )}
-            </div>
-          )}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
-    </header>
+      </header>
+
+      {/* Global Search Modal Dialog */}
+      <GlobalSearch
+        cases={cases}
+        onSelectCase={onSelectCase}
+        onNavigate={onNavigate}
+        isOpen={showSearchModal}
+        onClose={() => setShowSearchModal(false)}
+      />
+    </>
   );
 }

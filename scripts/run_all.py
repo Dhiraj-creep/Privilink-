@@ -7,7 +7,8 @@ Launches:
 4. Lender C Sovereign Node (Port 8003)
 5. React / Vite Frontend (Port 5173)
 
-Monitors all sub-processes and handles clean graceful shutdown on Ctrl+C.
+Monitors all sub-processes, verifies HTTP readiness on all 5 ports,
+and handles clean graceful shutdown on Ctrl+C.
 """
 
 import sys
@@ -15,6 +16,8 @@ import os
 import time
 import subprocess
 import signal
+import urllib.request
+import urllib.error
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -37,6 +40,49 @@ def ensure_data_seeded():
         seed_all()
     else:
         print("[TRUSTMESH] Verified existing data stores.")
+
+
+def probe_endpoint(name: str, url: str, timeout: float = 1.0) -> bool:
+    """Attempt HTTP GET request against service endpoint."""
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "Trustmesh-HealthProbe/1.0"})
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            return resp.status in (200, 304)
+    except Exception:
+        return False
+
+
+def verify_cluster_readiness(max_attempts: int = 15, delay: float = 0.8) -> bool:
+    """Active readiness check polling all 5 microservice endpoints."""
+    endpoints = [
+        ("Coordinator API", f"http://127.0.0.1:{COORDINATOR_PORT}/api/health"),
+        ("Bank A Node", f"http://127.0.0.1:{BANK_A_PORT}/health"),
+        ("Insurer B Node", f"http://127.0.0.1:{INSURER_B_PORT}/health"),
+        ("Lender C Node", f"http://127.0.0.1:{LENDER_C_PORT}/health"),
+        ("Vite Frontend UI", "http://localhost:5173/")
+    ]
+
+    print("\n[PROBE] Verifying readiness across all federation endpoints...")
+    all_ready = False
+
+    for attempt in range(1, max_attempts + 1):
+        pending = []
+        for name, url in endpoints:
+            if not probe_endpoint(name, url):
+                pending.append(name)
+
+        if not pending:
+            all_ready = True
+            break
+
+        time.sleep(delay)
+
+    for name, url in endpoints:
+        ok = probe_endpoint(name, url)
+        status_symbol = "✓" if ok else "✗"
+        print(f"  [{status_symbol}] {name:<20} -> {url}")
+
+    return all_ready
 
 
 def main():
@@ -72,7 +118,6 @@ def main():
 
         # 3. Start Vite Frontend (Port 5173)
         print(f"[3/3] Launching Frontend UI at http://localhost:5173/...")
-        # On Windows, npm is npm.cmd
         npm_cmd = "npm.cmd" if os.name == "nt" else "npm"
         p_front = subprocess.Popen(
             [npm_cmd, "run", "dev"],
@@ -82,19 +127,25 @@ def main():
         )
         processes.append(("Frontend UI", p_front))
 
-        time.sleep(2)
+        # Perform Active Health Probes
+        is_ready = verify_cluster_readiness(max_attempts=15, delay=0.8)
 
-        print("\n" + "=" * 72)
-        print("  ✓ ALL SYSTEMS RUNNING SUCCESSFULLY")
-        print("=" * 72)
-        print(f"  • Frontend Web UI:        http://localhost:5173/")
-        print(f"  • Coordinator API:         http://127.0.0.1:{COORDINATOR_PORT}/api")
-        print(f"  • API Swagger Docs:        http://127.0.0.1:{COORDINATOR_PORT}/docs")
-        print(f"  • Bank A Sovereign Node:   http://127.0.0.1:{BANK_A_PORT}/")
-        print(f"  • Insurer B Sovereign Node: http://127.0.0.1:{INSURER_B_PORT}/")
-        print(f"  • Lender C Sovereign Node:  http://127.0.0.1:{LENDER_C_PORT}/")
-        print("=" * 72)
-        print("  Press Ctrl+C at any time to cleanly stop all processes.\n")
+        if not is_ready:
+            print("\n[ERROR] One or more services failed readiness verification.")
+            print("[INFO] Check port availability and node database configurations.")
+            # Do not exit immediately if running interactively, but notify clearly
+        else:
+            print("\n" + "=" * 72)
+            print("  ✓ ALL 5 FEDERATION SERVICES VERIFIED & READY")
+            print("=" * 72)
+            print(f"  • Frontend Web UI:         http://localhost:5173/")
+            print(f"  • Coordinator API:          http://127.0.0.1:{COORDINATOR_PORT}/api")
+            print(f"  • Coordinator Swagger Docs: http://127.0.0.1:{COORDINATOR_PORT}/docs")
+            print(f"  • Bank A Sovereign Node:    http://127.0.0.1:{BANK_A_PORT}/")
+            print(f"  • Insurer B Sovereign Node:  http://127.0.0.1:{INSURER_B_PORT}/")
+            print(f"  • Lender C Sovereign Node:   http://127.0.0.1:{LENDER_C_PORT}/")
+            print("=" * 72)
+            print("  Press Ctrl+C at any time to cleanly stop all processes.\n")
 
         # Keep alive and monitor
         while True:
@@ -110,7 +161,6 @@ def main():
             try:
                 proc.terminate()
                 if os.name == "nt":
-                    # Force kill child process tree if needed
                     subprocess.call(
                         ["taskkill", "/F", "/T", "/PID", str(proc.pid)],
                         stdout=subprocess.DEVNULL,
@@ -118,7 +168,6 @@ def main():
                     )
             except Exception:
                 pass
-        print("[TRUSTMESH] All services stopped. Shutdown complete.")
 
 
 if __name__ == "__main__":

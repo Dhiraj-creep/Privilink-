@@ -44,6 +44,12 @@ class CaseService:
             cursor = conn.execute(query, params)
             rows = cursor.fetchall()
 
+            # Query active verification tasks to ensure list items include activeTaskId
+            cursor_tasks = conn.execute(
+                "SELECT id, case_id, status FROM verification_tasks WHERE status = 'REQUESTED'"
+            )
+            active_task_map = {r["case_id"]: r["id"] for r in cursor_tasks.fetchall()}
+
             cases = []
             for r in rows:
                 c = dict(r)
@@ -54,6 +60,8 @@ class CaseService:
                 c["riskLevel"] = c.pop("risk_level")
                 c["customerId"] = c.pop("customer_id")
                 c["entityRef"] = c.pop("entity_ref")
+                c["activeTaskId"] = active_task_map.get(c["id"])
+                c["hasActiveTask"] = c["id"] in active_task_map
                 cases.append(c)
 
             return cases
@@ -112,7 +120,15 @@ class CaseService:
 
             prev_status = row["status"]
             if prev_status == "VERIFICATION_REQUESTED":
-                raise ValueError(f"Case {case_id} is already in VERIFICATION_REQUESTED status")
+                raise ValueError(f"Case {case_id} is already in VERIFICATION_REQUESTED status.")
+
+            # Check if active task already exists
+            cur_existing = conn.execute(
+                "SELECT id FROM verification_tasks WHERE case_id = ? AND status = 'REQUESTED' LIMIT 1",
+                (case_id,)
+            )
+            if cur_existing.fetchone():
+                raise ValueError(f"Case {case_id} already has an active pending verification task.")
 
             new_status = "VERIFICATION_REQUESTED"
 
@@ -137,7 +153,8 @@ class CaseService:
             ))
 
             # Create internal task
-            task_id = f"TASK-{case_id}-{int(datetime.now().timestamp())}"
+            import uuid
+            task_id = f"TASK-{case_id}-{uuid.uuid4().hex[:8].upper()}"
             conn.execute("""
                 INSERT INTO verification_tasks (id, case_id, status, requested_by, requested_at, assigned_to, notes)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -175,8 +192,8 @@ class CaseService:
     def resolve_case(
         self,
         case_id: str,
-        task_id: str,
-        resolution_notes: str,
+        task_id: Optional[str] = None,
+        resolution_notes: str = "",
         actor: str = "COMPLIANCE_OFFICER_01",
         role: str = "COMPLIANCE_OFFICER"
     ) -> Dict[str, Any]:
@@ -195,18 +212,28 @@ class CaseService:
                     f"Only cases with status 'VERIFICATION_REQUESTED' can be resolved."
                 )
 
-            # 2. Verify task exists, matches case_id, and is currently REQUESTED
-            cur_task = conn.execute("SELECT * FROM verification_tasks WHERE id = ?", (task_id,))
-            task_row = cur_task.fetchone()
-            if not task_row:
-                raise ValueError(f"Task '{task_id}' does not exist.")
-            if task_row["case_id"] != case_id:
-                raise ValueError(
-                    f"Task ownership violation: Task '{task_id}' is assigned to case '{task_row['case_id']}', "
-                    f"not '{case_id}'."
+            # 2. Verify or resolve task association
+            if task_id:
+                cur_task = conn.execute("SELECT * FROM verification_tasks WHERE id = ?", (task_id,))
+                task_row = cur_task.fetchone()
+                if not task_row:
+                    raise ValueError(f"Task '{task_id}' does not exist.")
+                if task_row["case_id"] != case_id:
+                    raise ValueError(
+                        f"Task ownership violation: Task '{task_id}' is assigned to case '{task_row['case_id']}', "
+                        f"not '{case_id}'."
+                    )
+                if task_row["status"] != "REQUESTED":
+                    raise ValueError(f"Task '{task_id}' is already in status '{task_row['status']}'.")
+            else:
+                cur_task = conn.execute(
+                    "SELECT * FROM verification_tasks WHERE case_id = ? AND status = 'REQUESTED' ORDER BY requested_at DESC LIMIT 1",
+                    (case_id,)
                 )
-            if task_row["status"] != "REQUESTED":
-                raise ValueError(f"Task '{task_id}' is already in status '{task_row['status']}'.")
+                task_row = cur_task.fetchone()
+                if not task_row:
+                    raise ValueError(f"No active verification task found for case '{case_id}'.")
+                task_id = task_row["id"]
 
             # 3. Apply atomic updates
             conn.execute(
@@ -247,5 +274,6 @@ class CaseService:
             "case_id": case_id,
             "task_id": task_id,
             "status": "RESOLVED",
+            "new_status": "RESOLVED",
             "audit_hash": audit_event["hash"]
         }

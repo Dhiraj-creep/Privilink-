@@ -1,161 +1,124 @@
 import React from 'react';
-import { 
-  Info,
-  Lock, 
-  AlertTriangle, 
-  ShieldCheck
-} from 'lucide-react';
+import { Info } from 'lucide-react';
+import { Card } from '../components/ui/Card';
+import { Badge } from '../components/ui/Badge';
 
 export default function ArchitectureScopeView() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
       {/* Title */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
+      <div className="tm-page-header">
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <h1 style={{ fontSize: '1.45rem', fontWeight: 700, color: 'var(--primary-dark)' }}>
-              System Architecture, Threat Model & Scope
-            </h1>
-            <span className="badge badge-demo">Engineering Whitepaper</span>
+            <h1 className="tm-page-title">System Architecture, Threat Model & Scope</h1>
+            <Badge variant="demo" size="sm">Technical Whitepaper</Badge>
           </div>
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
-            Formal specifications of the vertical federated learning pipeline and prototype operational boundaries.
+          <p className="tm-page-desc">
+            Formal specifications of the vertical federated learning pipeline, sovereign physical storage boundaries, and compliance mapping.
           </p>
         </div>
       </div>
 
-      {/* Section 32: Realistic Scope & Prototype Disclaimers */}
-      <div className="card" style={{ borderLeft: '4px solid var(--primary-dark)', padding: '22px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-          <Info size={18} color="var(--primary-dark)" />
-          <h3 style={{ fontSize: '0.98rem', fontWeight: 700, color: 'var(--primary-dark)' }}>
+      {/* Scope Notice */}
+      <div style={{
+        padding: '16px 20px',
+        borderRadius: 'var(--radius-lg)',
+        backgroundColor: 'var(--primary-subtle)',
+        border: '1px solid var(--primary-border)',
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: '14px'
+      }}>
+        <Info size={20} color="var(--primary)" style={{ flexShrink: 0, marginTop: '2px' }} />
+        <div>
+          <strong style={{ fontSize: '13px', color: 'var(--primary-text)' }}>
             Prototype Scope & Regulatory Governance Notice
-          </h3>
-        </div>
-        
-        <p style={{ fontSize: '0.825rem', color: 'var(--text-secondary)', lineHeight: 1.55, marginBottom: '10px' }}>
-          <em>"This prototype uses synthetic financial data and simulated institutional environments. It demonstrates the architecture, workflow and privacy principles; it is not a production banking system."</em>
-        </p>
-
-        <p style={{ fontSize: '0.825rem', color: 'var(--text-secondary)', lineHeight: 1.55 }}>
-          <em>"Real deployment would require regulatory review, institutional agreements, security validation, privacy impact assessment and independent model validation."</em>
-        </p>
-      </div>
-
-      {/* Architecture Overview Diagram & Modules */}
-      <div className="card">
-        <div className="card-header">
-          <div>
-            <h3 style={{ fontSize: '0.98rem', fontWeight: 700, color: 'var(--primary-dark)' }}>
-              End-to-End Technical Architecture
-            </h3>
-            <p style={{ fontSize: '0.765rem', color: 'var(--text-secondary)' }}>
-              Heterogeneous multi-party vertical federation without raw data egress
-            </p>
-          </div>
-          <span className="badge badge-primary">VFL Topology</span>
-        </div>
-
-        <div className="card-body">
-          <div style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: '0.765rem',
-            backgroundColor: 'var(--nav-bg)',
-            color: '#F8FAFC',
-            padding: '24px',
-            borderRadius: 'var(--radius-md)',
-            border: '1px solid var(--nav-border)',
-            lineHeight: 1.65,
-            overflowX: 'auto'
-          }}>
-            <div style={{ color: 'var(--muted-sage)' }}>+-----------------------------------------------------------------------------------+</div>
-            <div style={{ color: 'var(--muted-sage)' }}>|                               TRUSTMESH ARCHITECTURE                              |</div>
-            <div style={{ color: 'var(--muted-sage)' }}>+-----------------------------------------------------------------------------------+</div>
-            <div>[ BANK A ]               [ INSURER B ]              [ LENDER C ]</div>
-            <div>   │ Local Schema:             │ Local Schema:            │ Local Schema:</div>
-            <div>   │ Txns, Repayment           │ Claims, Loss Ratios      │ Credit, Inquiries</div>
-            <div>   ▼                           ▼                          ▼</div>
-            <div>[ Private Encoder Head ]   [ Private Encoder Head ]   [ Private Encoder Head ]</div>
-            <div>   │ 64-dim Latent Vector      │ 64-dim Latent Vector     │ 64-dim Latent Vector</div>
-            <div>   ▼                           ▼                          ▼</div>
-            <div>[ DP-SGD Noise (ε=1.5) ]   [ DP-SGD Noise (ε=1.5) ]   [ DP-SGD Noise (ε=1.5) ]</div>
-            <div>   │ Pairwise Ciphertext Mask  │ Pairwise Ciphertext Mask │ Pairwise Ciphertext Mask</div>
-            <div>   └───────────────┬───────────┴───────────┬──────────────┘</div>
-            <div>                   ▼                       ▼</div>
-            <div>         [ SECURE AGGREGATION COORDINATOR (Zero-Knowledge) ]</div>
-            <div>                   │ Pairwise Masks Cancel Out: Σ(M_i,j) = 0</div>
-            <div>                   │ Aggregator CANNOT inspect individual updates</div>
-            <div>                   ▼</div>
-            <div>         [ ROBUST BYZANTINE FILTER (Norm Clamping + Median) ]</div>
-            <div>                   │ Flags & isolates anomalous participant updates</div>
-            <div>                   ▼</div>
-            <div>         [ GLOBAL COLLABORATIVE INFERENCE HEAD ]</div>
-            <div>                   │ Synthesizes cross-institution weak signals</div>
-            <div>                   ▼</div>
-            <div>         [ MINIMUM NECESSARY DISCLOSURE (Decision Support) ]</div>
-            <div>                   │ Discloses Risk Score & Archetype ONLY</div>
-            <div>                   │ 0 Raw Customer Records, Identifiers, or PII</div>
-          </div>
+          </strong>
+          <p style={{ fontSize: '12px', color: 'var(--primary-text)', marginTop: '4px', lineHeight: 1.5 }}>
+            This system is an academic research prototype evaluated on synthetic financial data and local sovereign SQLite databases. It is designed to demonstrate mathematical principles, cryptographic workflows, and institutional user journeys. Real deployment would require regulatory review, institutional agreements, security validation, and formal privacy impact assessments.
+          </p>
         </div>
       </div>
 
-      {/* Threat Model & Mitigations Matrix */}
-      <div className="card">
-        <div className="card-header">
-          <div>
-            <h3 style={{ fontSize: '0.98rem', fontWeight: 700, color: 'var(--primary-dark)' }}>
-              Threat Model & Cryptographic Countermeasures
-            </h3>
-            <p style={{ fontSize: '0.765rem', color: 'var(--text-secondary)' }}>
-              Defensive posturing against standard multi-party computation attack surfaces
-            </p>
-          </div>
-        </div>
+      {/* Architecture Overview Diagram */}
+      <Card
+        title="Vertical Federated Learning (Split Learning) Data Flow"
+        subtitle="Heterogeneous multi-party vertical federation without raw customer data egress."
+      >
+        <pre style={{
+          fontFamily: 'var(--font-mono)',
+          fontSize: '11px',
+          backgroundColor: 'var(--bg-subtle)',
+          color: 'var(--text-primary)',
+          padding: '20px',
+          borderRadius: 'var(--radius-md)',
+          border: '1px solid var(--border-default)',
+          lineHeight: 1.6,
+          overflowX: 'auto'
+        }}>
+{`+---------------------------------------------------------------------------------------------------+
+|                                 TRUSTMESH FEDERATION ARCHITECTURE                                 |
++---------------------------------------------------------------------------------------------------+
 
-        <div className="card-body">
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
-            
-            <div style={{ padding: '16px', backgroundColor: 'var(--bg-subtle)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                <Lock size={16} color="var(--primary-dark)" />
-                <span style={{ fontWeight: 700, fontSize: '0.825rem', color: 'var(--primary-dark)' }}>
-                  Honest-but-Curious Central Node
-                </span>
-              </div>
-              <p style={{ fontSize: '0.765rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                <strong>Threat:</strong> Aggregator attempts to inspect individual institution records.<br/>
-                <strong>Countermeasure:</strong> SecAgg protocol ensures only the sum is decryptable. Pairwise Diffie-Hellman masks blind individual contributions.
-              </p>
-            </div>
+   +--------------------------+    +--------------------------+    +--------------------------+
+   |       BANK A NODE        |    |      INSURER B NODE      |    |      LENDER C NODE       |
+   |   Port 8001 / SQLite     |    |    Port 8002 / SQLite    |    |    Port 8003 / SQLite    |
+   |  (Local Repayment Ledger)|    |  (Local Claims Ledger)   |    |  (Local Inquiries Ledger)|
+   +--------------------------+    +--------------------------+    +--------------------------+
+                │                               │                               │
+                │ Local Features                │ Local Features                │ Local Features
+                ▼                               ▼                               ▼
+   +──────────────────────────+    +──────────────────────────+    +──────────────────────────+
+   |   Local Private Encoder  |    |   Local Private Encoder  |    |   Local Private Encoder  |
+   |   (StandardScaler + L2)  |    |   (StandardScaler + L2)  |    |   (StandardScaler + L2)  |
+   +──────────────────────────+    +──────────────────────────+    +──────────────────────────+
+                │                               │                               │
+                │ Partial Logit (z_A)           │ Partial Logit (z_B)           │ Partial Logit (z_C)
+                ▼                               ▼                               ▼
+   +──────────────────────────+    +──────────────────────────+    +──────────────────────────+
+   |  Blinded Pairwise Mask   |    |  Blinded Pairwise Mask   |    |  Blinded Pairwise Mask   |
+   |       v_A + M_A          |    |       v_B + M_B          |    |       v_C + M_C          |
+   |    (M_A = S_AB + S_AC)   |    |    (M_B = -S_AB + S_BC)  |    |    (M_C = -S_AC - S_BC)  |
+   +──────────────────────────+    +──────────────────────────+    +──────────────────────────+
+                └───────────────────────────────┼───────────────────────────────┘
+                                                ▼ Blinded Vectors Only (Σ M_i = 0)
+                            +───────────────────────────────────────+
+                            |     CENTRAL COORDINATOR (Port 8000)   |
+                            |   • SecAgg Protocol: Σ M_i = 0        |
+                            |   • Coordinate-wise Median Filtering  |
+                            |   • Vertical Fed Collaborative Model  |
+                            |   • Tamper-Evident SHA-256 Hash Chain |
+                            +───────────────────────────────────────+
+                                                │
+                                                ▼
+                            +───────────────────────────────────────+
+                            |         ENTERPRISE UI (Port 5173)     |
+                            |   • Role-Based Access Control (RBAC)  |
+                            |   • Customer Investigation & SHAP     |
+                            |   • Cryptographic Audit Inspector     |
+                            +───────────────────────────────────────+`}
+        </pre>
+      </Card>
 
-            <div style={{ padding: '16px', backgroundColor: 'var(--bg-subtle)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                <AlertTriangle size={16} color="var(--warning-text)" />
-                <span style={{ fontWeight: 700, fontSize: '0.825rem', color: 'var(--warning-text)' }}>
-                  Byzantine / Poisoning Nodes
-                </span>
-              </div>
-              <p style={{ fontSize: '0.765rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                <strong>Threat:</strong> Compromised participant submits malicious gradients.<br/>
-                <strong>Countermeasure:</strong> Trust-aware participant scoring, gradient L2-norm clipping (C=1.0), and Coordinate-Wise Median aggregation quarantine outliers.
-              </p>
-            </div>
+      {/* 3 Core Trust Assumptions & Defense Mechanisms */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: '16px' }}>
+        <Card title="Zero-Sum Masking (SecAgg)">
+          <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.55 }}>
+            Each pair of nodes agrees on a shared blinding seed. Because every mask added by one node is subtracted by another, their sum equals zero when combined at the coordinator: Σ M_i = 0. The coordinator learns the aggregate without ever observing individual inputs.
+          </p>
+        </Card>
 
-            <div style={{ padding: '16px', backgroundColor: 'var(--bg-subtle)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                <ShieldCheck size={16} color="var(--success-text)" />
-                <span style={{ fontWeight: 700, fontSize: '0.825rem', color: 'var(--success-text)' }}>
-                  Gradient Inversion Attacks
-                </span>
-              </div>
-              <p style={{ fontSize: '0.765rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                <strong>Threat:</strong> Adversary uses model differences to reconstruct training inputs.<br/>
-                <strong>Countermeasure:</strong> Formal (ε, δ)-Differential Privacy (DP-SGD) with calibrated Gaussian noise bounds information leakage.
-              </p>
-            </div>
+        <Card title="Differential Privacy (DP-SGD)">
+          <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.55 }}>
+            Individual customer records are protected via L2 gradient norm clipping (C=1.0) and calibrated Gaussian noise injection: σ = C · √(2 ln(1.25/δ)) / ε. An adversary cannot determine whether an individual record was present in the training set.
+          </p>
+        </Card>
 
-          </div>
-        </div>
+        <Card title="Commutative DH-PSI">
+          <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.55 }}>
+            Parties compute double exponentiation over a 256-bit safe prime: (H(ID)^a)^b = (H(ID)^b)^a mod p. Elements in the intersection produce identical doubly-blinded values, allowing entity alignment with zero plaintext PII disclosure.
+          </p>
+        </Card>
       </div>
     </div>
   );

@@ -124,7 +124,7 @@ def test_step_up_verification_workflow():
 
 def test_simulation_scenario_escalation():
     """Verify running cross-institution anomaly scenario transitions CASE-10482 to HIGH."""
-    res = client.post("/api/simulation/run", json={"scenario": "ANOMALY"})
+    res = client.post("/api/simulation/run", json={"scenario": "ANOMALY"}, headers=analyst_headers)
     assert res.status_code == 200
     data = res.json()
     assert data["target_case_id"] == "CASE-10482"

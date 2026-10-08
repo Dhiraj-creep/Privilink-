@@ -14,28 +14,30 @@ export function Card({
 }) {
   return (
     <div
-      className={`tm-card ${className}`}
+      className={`tm-card card ${className}`}
       style={{
-        backgroundColor: raised ? 'var(--bg-surface-raised)' : 'var(--bg-surface)',
+        backgroundColor: '#FFFFFF',
         border: '1px solid var(--border-default)',
         borderRadius: 'var(--radius-lg)',
-        boxShadow: 'var(--shadow-sm)',
+        boxShadow: raised ? 'var(--shadow-md)' : 'var(--shadow-xs)',
         display: 'flex',
         flexDirection: 'column',
         position: 'relative',
-        transition: 'border-color var(--transition-normal), background-color var(--transition-normal)',
+        transition: 'border-color var(--transition-fast), box-shadow var(--transition-fast)',
         ...style
       }}
       {...props}
     >
       {(header || title) && (
         <div
+          className="tm-card-header"
           style={{
-            padding: '14px 18px',
+            padding: '14px 20px',
             borderBottom: '1px solid var(--border-default)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
+            flexWrap: 'wrap',
             gap: '12px'
           }}
         >
@@ -57,8 +59,8 @@ export function Card({
               {subtitle && (
                 <p
                   style={{
-                    fontSize: 'var(--text-sm)',
-                    color: 'var(--text-secondary)',
+                    fontSize: 'var(--text-xs)',
+                    color: 'var(--text-muted)',
                     marginTop: '2px',
                     margin: 0
                   }}
@@ -72,16 +74,16 @@ export function Card({
         </div>
       )}
 
-      <div style={{ padding: '18px', flex: 1 }}>{children}</div>
+      <div style={{ padding: '20px', flex: 1 }}>{children}</div>
 
       {footer && (
         <div
           style={{
-            padding: '10px 18px',
+            padding: '12px 20px',
             borderTop: '1px solid var(--border-default)',
-            backgroundColor: 'rgba(0, 0, 0, 0.15)',
-            fontSize: 'var(--text-sm)',
-            color: 'var(--text-secondary)',
+            backgroundColor: 'var(--bg-subtle)',
+            fontSize: 'var(--text-xs)',
+            color: 'var(--text-muted)',
             borderBottomLeftRadius: 'var(--radius-lg)',
             borderBottomRightRadius: 'var(--radius-lg)'
           }}

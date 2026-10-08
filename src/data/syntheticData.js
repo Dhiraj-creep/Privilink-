@@ -194,6 +194,7 @@ export const RISK_CASES = [
     riskLevel: 'LOW',
     localSignals: 'Normal',
     collaborativeSignal: 'No anomaly',
+    score: 12,
     confidence: 96,
     action: 'Normal processing',
     privacyStatus: 'Protected',
@@ -211,7 +212,7 @@ export const RISK_CASES = [
       { name: 'Historical stability', score: 10, color: '#8FAF9D' }
     ],
     minimumDisclosure: {
-      disclosedToAnalyst: ['Composite Risk Score: LOW (96%)', 'Workflow: Automated straight-through pass'],
+      disclosedToAnalyst: ['Composite Risk Score: LOW (Risk Score: 12%, Confidence: 96%)', 'Workflow: Automated straight-through pass'],
       strictlyProtected: ['All underlying account identifiers and operational logs']
     }
   },
@@ -222,6 +223,7 @@ export const RISK_CASES = [
     riskLevel: 'MEDIUM',
     localSignals: '2 weak signals',
     collaborativeSignal: 'Behavioural deviation',
+    score: 52,
     confidence: 74,
     action: 'Additional verification',
     privacyStatus: 'Protected',
@@ -239,7 +241,7 @@ export const RISK_CASES = [
       { name: 'Cross-institution correlation', score: 22, color: '#2F6B4F' }
     ],
     minimumDisclosure: {
-      disclosedToAnalyst: ['Composite Risk Score: MEDIUM (74%)', 'Recommendation: Secondary liquidity review'],
+      disclosedToAnalyst: ['Composite Risk Score: MEDIUM (Risk Score: 52%, Confidence: 74%)', 'Recommendation: Secondary liquidity review'],
       strictlyProtected: ['Exact income deposits, statement PDFs, credit card statements']
     }
   },
@@ -250,6 +252,7 @@ export const RISK_CASES = [
     riskLevel: 'LOW',
     localSignals: 'Normal',
     collaborativeSignal: 'No anomaly',
+    score: 14,
     confidence: 94,
     action: 'Normal processing',
     privacyStatus: 'Protected',
@@ -266,7 +269,7 @@ export const RISK_CASES = [
       { name: 'Cross-institution validation', score: 35, color: '#2F6B4F' }
     ],
     minimumDisclosure: {
-      disclosedToAnalyst: ['Composite Risk Score: LOW (94%)', 'Clearance: Automated'],
+      disclosedToAnalyst: ['Composite Risk Score: LOW (Risk Score: 14%, Confidence: 94%)', 'Clearance: Automated'],
       strictlyProtected: ['Mortgage property appraisal details and personal financial records']
     }
   },
@@ -277,7 +280,8 @@ export const RISK_CASES = [
     riskLevel: 'HIGH',
     localSignals: '3 weak signals',
     collaborativeSignal: 'Rapid cross-entity multi-exposure',
-    confidence: 89,
+    score: 89,
+    confidence: 92,
     action: 'Enhanced verification',
     privacyStatus: 'Protected',
     lastEscalation: '48 mins ago',
@@ -294,7 +298,7 @@ export const RISK_CASES = [
       { name: 'Local banking anomaly', score: 27, color: '#12372A' }
     ],
     minimumDisclosure: {
-      disclosedToAnalyst: ['Composite Risk Score: HIGH (89%)', 'Flag: Multi-institution velocity burst'],
+      disclosedToAnalyst: ['Composite Risk Score: HIGH (Risk Score: 89%, Confidence: 92%)', 'Flag: Multi-institution velocity burst'],
       strictlyProtected: ['Personal names, bank wire recipients, vehicle registration data']
     }
   },
@@ -305,6 +309,7 @@ export const RISK_CASES = [
     riskLevel: 'MEDIUM',
     localSignals: '1 moderate signal',
     collaborativeSignal: 'Localized variance',
+    score: 48,
     confidence: 72,
     action: 'Standard monitoring',
     privacyStatus: 'Protected',
@@ -321,7 +326,7 @@ export const RISK_CASES = [
       { name: 'Baseline stability validation', score: 45, color: '#3F7D5A' }
     ],
     minimumDisclosure: {
-      disclosedToAnalyst: ['Composite Risk Score: MEDIUM-LOW (72%)', 'Action: Continue baseline telemetry'],
+      disclosedToAnalyst: ['Composite Risk Score: MEDIUM (Risk Score: 48%, Confidence: 72%)', 'Action: Continue baseline telemetry'],
       strictlyProtected: ['Insured property address, adjuster notes, photos']
     }
   }

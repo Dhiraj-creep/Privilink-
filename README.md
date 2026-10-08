@@ -2,13 +2,16 @@
 ### Privacy-Preserving Cross-Institution Risk Intelligence
 > **“Share intelligence. Not customer data.”**
 
-[![Build Status](https://img.shields.io/badge/tests-28%2F28%20passing-brightgreen.svg)]()
+[![Build Status](https://img.shields.io/badge/pytest-35%2F35%20passing-brightgreen.svg)]()
+[![Browser Tests](https://img.shields.io/badge/e2e%20browser-12%2F12%20passing-brightgreen.svg)]()
 [![Linter](https://img.shields.io/badge/oxlint-0%20warnings%200%20errors-brightgreen.svg)]()
+[![Design System](https://img.shields.io/badge/UI-Google%20Stitch%20Theme-indigo.svg)]()
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)]()
 [![Federated-Learning](https://img.shields.io/badge/VFL-Vertical%20Partitioning-teal.svg)]()
 [![Cryptography](https://img.shields.io/badge/Crypto-SecAgg%20%2B%20DH--PSI-indigo.svg)]()
 [![Differential-Privacy](https://img.shields.io/badge/DP--SGD-Gaussian%20Mechanism-purple.svg)]()
 [![Integrity](https://img.shields.io/badge/Audit-SHA--256%20Hash%20Chain-emerald.svg)]()
+
 
 ---
 
@@ -100,6 +103,28 @@ All 15 deficiencies identified during initial codebase audit have been resolved:
 | **13** | **Timer Leaks in Labs** | Resetting SecAgg or PSI left timers running | Implemented `useRef` timer registries with comprehensive unmount and reset cleanup in all interactive labs | Verified |
 | **14** | **Step-Up Verification** | Local UI flag only; lost on reload | Persistent `verification_tasks` table, status transitions (`VERIFICATION_REQUESTED` -> `RESOLVED`), and audit logging | Verified |
 | **15** | **Code Quality & Linter** | 18 linter warnings in frontend | Oxlint passes with **0 errors and 0 warnings** across all 22 frontend files; Vite production build verified | Verified |
+
+> **Comprehensive Requirements & Audit Tracking:** See [`REQUIREMENTS_MATRIX.md`](file:///d:/Enigma%20final%20project/Trustmesh/REQUIREMENTS_MATRIX.md) for the complete requirements verification matrix, defect resolution mapping, and capability tier classifications.
+
+### 3.1 Trust & Integrity Defect Resolutions (Defects A–F)
+- **Defect A — Audit Verification State Machine:** Replaced unconditional "Verified" badge with a strict 4-state machine (`CHECKING`, `VERIFIED`, `TAMPER_DETECTED`, `UNAVAILABLE`). The platform never claims cryptographic verification if network connectivity fails or if hashes mismatch.
+- **Defect B — Dynamic Anomaly Scoring:** Removed hardcoded 98.4 fallback in the frontend. All cross-institution anomaly scenarios require dynamic inference execution against the backend coordinator (`/api/simulate/run-scenario`).
+- **Defect C — Empty State Fidelity:** Eliminated silent substitution of mock fixtures upon network disconnects or 0-result searches. Distinct watermarks distinguish "Live Sovereign SQLite" from "Demonstration Fixture (Offline)", with dedicated `<EmptyState />` UI components.
+- **Defect D — Normalized Model Metrics API:** Standardized `/api/model/metrics` on the FastAPI coordinator to synthesize top-level normalized objects (`collaborative`, `baselines`) with disk artifacts (`metrics.json`), eliminating metric display fallbacks.
+- **Defect E — Decoupling Risk Probability from Model Confidence:** Distinctly separated the 0–100 risk probability metric from model prediction certainty (e.g. `CASE-10491` has risk score 12 with 96% classification confidence), resolving UI contradictions.
+- **Defect F — Dynamic Cluster Telemetry:** Implemented `/api/health/cluster` actively probing ports 8000, 8001, 8002, and 8003. Replaced static "Cluster Live" badge with real-time cluster telemetry ("Cluster Online: 4/4 Nodes" vs "Cluster: 1/3 Nodes" vs "Local Standalone").
+
+### 3.2 Google Stitch Financial Intelligence Design System
+- **Page Canvas:** Warm off-white (`#F5F7FB`) providing high legibility without visual fatigue.
+- **Surfaces & Cards:** Crisp pure white (`#FFFFFF`) with 1px hairlines (`#E2E8F0`) and subtle elevation.
+- **Typography:** **Manrope** (500, 600, 700, 800) for authoritative headers; **Inter** for clean UI and body prose; **JetBrains Mono** with tabular numerals for hashes, IDs, and financial metrics.
+- **Color Discipline:**
+  - **Text:** Deep navy (`#14213D`) with secondary slate (`#526078`).
+  - **Primary Action:** Indigo (`#4F46E5`).
+  - **Collaboration & Sovereignty:** Deep Teal (`#0F766E`).
+  - **Model Intelligence:** Violet (`#7C3AED`).
+  - **Pending & Warnings:** Amber (`#B45309`).
+  - **Genuine Risk & Destructive:** Crimson Red (`#B91C1C`).
 
 ---
 
@@ -196,42 +221,59 @@ start_all.bat
 python scripts/run_all.py
 ```
 
-This launches:
-- **Frontend Web UI:** `http://localhost:5173/`
+**Docker Compose (Multi-Service Production Simulation):**
+```bash
+docker compose up --build
+```
+
+This launches all 5 isolated microservices:
+- **Frontend Web UI:** `http://localhost:5173/` (Vite / Nginx)
 - **Coordinator API:** `http://127.0.0.1:8000/api` (Swagger docs at `/docs`)
 - **Bank A Sovereign Node:** `http://127.0.0.1:8001/`
 - **Insurer B Sovereign Node:** `http://127.0.0.1:8002/`
 - **Lender C Sovereign Node:** `http://127.0.0.1:8003/`
 
-Press `Ctrl+C` in the terminal to cleanly terminate all processes without orphaned ports.
+The orchestrator includes active bounded HTTP health probes ensuring all 5 endpoints are responsive before signaling readiness. Press `Ctrl+C` in the terminal to cleanly terminate all processes without orphaned ports.
 
 ---
 
 ### 6.2 Running Tests & Linter
 
-**1. Run the Python Automated Test Suite (28 Unit & Integration Tests):**
+**1. Run the Python Automated Test Suite (35 Unit, Integration & Regression Tests):**
 ```bash
 python -m pytest tests -v
 ```
-*Result: 28 passed in ~10 seconds.*
+*Result: 35 passed in ~7.2 seconds (including strict RBAC boundary checks, real HTTP node probes, and tamper detection).*
 
-**2. Run Frontend Linter (Oxlint):**
+**2. Run Browser Workflow & End-to-End User Journey Test:**
+```bash
+npm run test:browser
+```
+*Result: 12 passed in ~300ms (cluster discovery → Risk Analyst login → step-up KYC task dispatch → page reload persistence → RBAC blocked resolution → Compliance Officer role switch → case resolution → SHA-256 audit ledger verification).*
+
+**3. Run Frontend Unit Suite (Node TAP Test):**
+```bash
+npm run test:utils
+```
+*Result: 4 passed, 0 failed in ~22ms.*
+
+**4. Run Frontend Linter (Oxlint):**
 ```bash
 npm run lint
 ```
-*Result: 0 warnings, 0 errors across 22 files.*
+*Result: 0 warnings, 0 errors across 39 files.*
 
-**3. Run Production Frontend Build (Vite):**
+**5. Run Production Frontend Build (Vite):**
 ```bash
 npm run build
 ```
-*Result: Clean bundle build in ~400ms.*
+*Result: Clean bundle build in ~520ms.*
 
-**4. Reset / Re-seed Demo State:**
+**6. Reset / Re-seed Demo State:**
 ```bash
 python scripts/reset_demo.py
 ```
-*Restores all 4 databases, retrains models, regenerates verified audit chain, and resets CASE-10482 to pristine initial state.*
+*Restores all 4 databases, retrains models, regenerates verified audit chain, cancels active verification tasks, and resets CASE-10482 to pristine baseline state.*
 
 ---
 
