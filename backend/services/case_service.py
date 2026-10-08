@@ -1,5 +1,5 @@
 """
-TRUSTMESH Case Service
+PriviLink Case Service
 Centralized business logic for risk cases, human-in-the-loop step-up verification, and state transitions.
 Ensures single source of truth for case status, dynamic minimum disclosure matrices, and audit logging.
 """
@@ -176,7 +176,7 @@ class CaseService:
             action="TRIGGER_STEP_UP_VERIFICATION",
             target_id=case_id,
             details=f"Step-Up KYC verification dispatched for {case_id}. Status transitioned from {prev_status} to {new_status}.",
-            institution="TRUSTMESH Network",
+            institution="PriviLink Network",
             privacy_status="Decision Support Dispatched",
             result=f"Task {task_id} Created"
         )
@@ -264,7 +264,7 @@ class CaseService:
             action="RESOLVE_VERIFICATION",
             target_id=case_id,
             details=f"Verification task {task_id} resolved for {case_id}: {resolution_notes}",
-            institution="TRUSTMESH Network",
+            institution="PriviLink Network",
             privacy_status="Audited Clearance",
             result="Case Resolved"
         )

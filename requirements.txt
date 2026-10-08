@@ -1,4 +1,4 @@
-# TRUSTMESH Python Dependencies
+# PriviLink Python Dependencies
 # Privacy-Preserving Collaborative Risk Intelligence Platform
 fastapi==0.141.1
 uvicorn==0.54.0

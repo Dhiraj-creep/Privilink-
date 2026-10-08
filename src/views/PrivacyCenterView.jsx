@@ -115,7 +115,7 @@ export default function PrivacyCenterView() {
         </div>
       </div>
 
-      {/* Visual Architectural Comparison: Centralized vs TrustMesh */}
+      {/* Visual Architectural Comparison: Centralized vs PriviLink */}
       <div className="card">
         <div className="card-header">
           <div>
@@ -123,7 +123,7 @@ export default function PrivacyCenterView() {
               Architecture Paradigm Comparison
             </h3>
             <p style={{ fontSize: '0.765rem', color: 'var(--text-secondary)' }}>
-              Traditional data sharing vs TRUSTMESH Privacy-Preserving Risk Intelligence
+              Traditional data sharing vs PriviLink Privacy-Preserving Risk Intelligence
             </p>
           </div>
           <span className="badge badge-demo">Workflow Proof</span>
@@ -173,7 +173,7 @@ export default function PrivacyCenterView() {
               </div>
             </div>
 
-            {/* TRUSTMESH Approach */}
+            {/* PriviLink Approach */}
             <div style={{
               padding: '18px',
               borderRadius: 'var(--radius-md)',
@@ -186,7 +186,7 @@ export default function PrivacyCenterView() {
                 </div>
                 <div>
                   <h4 style={{ fontSize: '0.925rem', fontWeight: 700, color: 'var(--success-text)' }}>
-                    TRUSTMESH Federated Approach
+                    PriviLink Federated Approach
                   </h4>
                   <span style={{ fontSize: '0.715rem', color: 'var(--success-text)' }}>Privacy-Preserving Intelligence</span>
                 </div>

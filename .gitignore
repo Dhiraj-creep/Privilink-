@@ -25,8 +25,19 @@ dist-ssr
 
 # Python
 __pycache__/
+*.py[cod]
+*$py.class
 *.pyc
 *.pyo
 *.pyd
 .pytest_cache/
 .env
+.env*.local
+venv/
+.venv/
+env/
+ENV/
+*.egg-info/
+.coverage
+htmlcov/
+

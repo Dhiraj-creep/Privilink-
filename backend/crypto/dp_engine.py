@@ -1,5 +1,5 @@
 """
-TRUSTMESH Differential Privacy Engine & Byzantine Defense
+PriviLink Differential Privacy Engine & Byzantine Defense
 Implements formal Differential Privacy (DP-SGD / Gaussian release mechanism) and
 Byzantine robustness (L2-norm clamping & Coordinate-Wise Median).
 """

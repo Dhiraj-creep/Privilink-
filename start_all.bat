@@ -1,7 +1,7 @@
 @echo off
-title TRUSTMESH - Privacy-Preserving Risk Intelligence
+title PriviLink - Shared intelligence. Protected data.
 echo ======================================================================
-echo   TRUSTMESH: Privacy-Preserving Cross-Institution Risk Intelligence
+echo   PriviLink: Shared intelligence. Protected data.
 echo   Starting complete system (Coordinator, Nodes, Frontend)...
 echo ======================================================================
 

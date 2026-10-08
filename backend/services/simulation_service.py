@@ -1,5 +1,5 @@
 """
-TRUSTMESH Simulation Service
+PriviLink Simulation Service
 Executes reproducible demonstration scenarios for hackathon presentations and testing.
 Controls dynamic network state, quarantine flags, and case state transitions.
 """
@@ -91,11 +91,11 @@ class SimulationService:
         # 1. Update sovereign records across participant nodes via authenticated RPC
         from backend.config import (
             BANK_A_URL, INSURER_B_URL, LENDER_C_URL,
-            INTERNAL_SERVICE_KEY, TRUSTMESH_ENV, TRUSTMESH_MODE
+            INTERNAL_SERVICE_KEY, PRIVILINK_ENV, PRIVILINK_MODE
         )
         is_test_adapter_allowed = (
-            TRUSTMESH_ENV != "production" and (
-                TRUSTMESH_MODE == "test_inprocess"
+            PRIVILINK_ENV != "production" and (
+                PRIVILINK_MODE == "test_inprocess"
             )
         )
 
@@ -186,7 +186,7 @@ class SimulationService:
             action="COLLABORATIVE_ANOMALY_ESCALATION",
             target_id="CASE-10482",
             details=f"Cross-institution pattern escalated for CASE-10482 via model inference: {risk_level} (Score {score}%).",
-            institution="TRUSTMESH Network",
+            institution="PriviLink Network",
             privacy_status="Zero-Knowledge Synthesis",
             result=f"{risk_level} Risk ({score}%)"
         )
@@ -229,7 +229,7 @@ class SimulationService:
             action="INFERENCE_ATTACK_MITIGATION",
             target_id="GLOBAL_MODEL_ROUND_27",
             details="Gradient inversion attack thwarted via DP Gaussian noise and pairwise blinding.",
-            institution="TRUSTMESH Network",
+            institution="PriviLink Network",
             privacy_status="Differential Privacy Active",
             result="Attack Defeated"
         )
@@ -274,11 +274,11 @@ class SimulationService:
         # Reset sovereign records across participant nodes
         from backend.config import (
             BANK_A_URL, INSURER_B_URL, LENDER_C_URL,
-            INTERNAL_SERVICE_KEY, TRUSTMESH_ENV, TRUSTMESH_MODE
+            INTERNAL_SERVICE_KEY, PRIVILINK_ENV, PRIVILINK_MODE
         )
         is_test_adapter_allowed = (
-            TRUSTMESH_ENV != "production" and (
-                TRUSTMESH_MODE == "test_inprocess"
+            PRIVILINK_ENV != "production" and (
+                PRIVILINK_MODE == "test_inprocess"
             )
         )
 

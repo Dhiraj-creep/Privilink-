@@ -68,7 +68,7 @@ export default function SecurityPrivacyView({
               weakness: 'Blind to real-time cash flow and claim histories'
             },
             {
-              institution: 'TRUSTMESH Collaborative VFL Model',
+              institution: 'PriviLink Collaborative VFL Model',
               features: 'All vertically-partitioned cross-institutional features',
               prAuc: collab.pr_auc !== undefined ? Number(collab.pr_auc.toFixed(3)) : GLOBAL_MODEL_METRICS.globalMetrics.prAuc,
               f1Score: collab.f1 !== undefined ? Number(collab.f1.toFixed(3)) : GLOBAL_MODEL_METRICS.globalMetrics.f1Score,
@@ -364,7 +364,7 @@ export default function SecurityPrivacyView({
 
           {/* Comparison Table */}
           <Card
-            title="Local Baselines vs TRUSTMESH Collaborative Model"
+            title="Local Baselines vs PriviLink Collaborative Model"
             subtitle="Demonstrating the empirical value of collaborative intelligence over siloed isolation on held-out test split."
           >
             <div className="tm-table-container">

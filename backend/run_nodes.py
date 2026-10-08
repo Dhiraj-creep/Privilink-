@@ -1,5 +1,5 @@
 """
-TRUSTMESH Sovereign Participant Nodes Server Runner
+PriviLink Sovereign Participant Nodes Server Runner
 Runs independent node microservices for Bank A (8001), Insurer B (8002), and Lender C (8003).
 Demonstrates physical process and database isolation.
 """
@@ -15,7 +15,7 @@ from fastapi.responses import JSONResponse
 # Ensure backend in path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from backend.config import BANK_A_PORT, INSURER_B_PORT, LENDER_C_PORT, INTERNAL_SERVICE_KEY, TRUSTMESH_ENV
+from backend.config import BANK_A_PORT, INSURER_B_PORT, LENDER_C_PORT, INTERNAL_SERVICE_KEY, PRIVILINK_ENV
 from backend.auth.security import verify_session_token, verify_institution_boundary_access
 from backend.models.schemas import ComputePartialLogitRequest
 from backend.nodes.bank_node import BankNodeService
@@ -24,7 +24,7 @@ from backend.nodes.lender_node import LenderNodeService
 
 
 def create_node_app(node_name: str, node_service) -> FastAPI:
-    app = FastAPI(title=f"TRUSTMESH Sovereign Node - {node_name}")
+    app = FastAPI(title=f"PriviLink Sovereign Node - {node_name}")
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
@@ -127,7 +127,7 @@ def create_node_app(node_name: str, node_service) -> FastAPI:
         Private customer features NEVER leave this node.
         Reads exclusively from the local sovereign SQLite database.
         """
-        if TRUSTMESH_ENV == "production" or (x_internal_key is not None):
+        if PRIVILINK_ENV == "production" or (x_internal_key is not None):
             if x_internal_key != INTERNAL_SERVICE_KEY:
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
@@ -149,7 +149,7 @@ def create_node_app(node_name: str, node_service) -> FastAPI:
         x_internal_key: Optional[str] = Header(None, alias="X-Internal-Service-Key")
     ):
         """Restricted demo mechanism owned by the sovereign node for test scenario injection."""
-        if TRUSTMESH_ENV == "production" or (x_internal_key is not None):
+        if PRIVILINK_ENV == "production" or (x_internal_key is not None):
             if x_internal_key != INTERNAL_SERVICE_KEY:
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
@@ -191,7 +191,7 @@ if __name__ == "__main__":
     elif node == "LENDER_C":
         run_lender()
     elif node == "ALL":
-        print("[TRUSTMESH] Launching all 3 sovereign participant nodes...")
+        print("[PriviLink] Launching all 3 sovereign participant nodes...")
         p1 = multiprocessing.Process(target=run_bank, name="BankA-Node-8001")
         p2 = multiprocessing.Process(target=run_insurer, name="InsurerB-Node-8002")
         p3 = multiprocessing.Process(target=run_lender, name="LenderC-Node-8003")
@@ -208,7 +208,7 @@ if __name__ == "__main__":
             for p in (p1, p2, p3):
                 p.join()
         except KeyboardInterrupt:
-            print("\n[TRUSTMESH] Shutting down participant nodes...")
+            print("\n[PriviLink] Shutting down participant nodes...")
             for p in (p1, p2, p3):
                 p.terminate()
     else:

@@ -1,5 +1,5 @@
 """
-TRUSTMESH Vertical Federated Learning (VFL) Engine
+PriviLink Vertical Federated Learning (VFL) Engine
 Implements Split Learning / Vertical Logistic Regression for vertically partitioned features.
 
 Mathematical formulation:
@@ -310,7 +310,7 @@ class VFLEngine:
         cm = confusion_matrix(y_test, vfl_preds).tolist()
 
         local_metrics.append({
-            "institution": "TRUSTMESH Collaborative Model",
+            "institution": "PriviLink Collaborative Model",
             "institution_id": "COLLABORATIVE",
             "features": "Unified Privacy-Preserving Risk Representations",
             "prAuc": round(vfl_pr_auc, 2),
@@ -463,17 +463,17 @@ class VFLEngine:
         import httpx
         from backend.config import (
             BANK_A_URL, INSURER_B_URL, LENDER_C_URL,
-            INTERNAL_SERVICE_KEY, TRUSTMESH_ENV, TRUSTMESH_MODE
+            INTERNAL_SERVICE_KEY, PRIVILINK_ENV, PRIVILINK_MODE
         )
         from backend.nodes.bank_node import BankNodeService
         from backend.nodes.insurer_node import InsurerNodeService
         from backend.nodes.lender_node import LenderNodeService
 
-        # Explicit test adapter flag: only permitted in testing when TRUSTMESH_ENV != "production"
+        # Explicit test adapter flag: only permitted in testing when PRIVILINK_ENV != "production"
         is_test_adapter_allowed = (
-            TRUSTMESH_ENV != "production" and
+            PRIVILINK_ENV != "production" and
             allow_test_inprocess is not False and (
-                TRUSTMESH_MODE == "test_inprocess" or allow_test_inprocess is True
+                PRIVILINK_MODE == "test_inprocess" or allow_test_inprocess is True
             )
         )
 

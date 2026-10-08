@@ -1,12 +1,12 @@
-# TRUSTMESH — Requirements & Capabilities Matrix
+# PriviLink — Requirements & Capabilities Matrix
 
-This document provides a rigorous, verifiable accounting of the requirements, technical implementations, resolved defects, and classification of capabilities for the **TRUSTMESH** privacy-preserving cross-institution risk intelligence platform.
+This document provides a rigorous, verifiable accounting of the requirements, technical implementations, resolved defects, and classification of capabilities for the **PriviLink** privacy-preserving cross-institution risk intelligence platform.
 
 ---
 
 ## 1. Capability Classification Framework
 
-To maintain academic and scientific integrity, capabilities within TRUSTMESH are partitioned into three explicit tiers:
+To maintain academic and scientific integrity, capabilities within PriviLink are partitioned into three explicit tiers:
 
 1. **Implemented Capabilities (Verified):** Functional, mathematically verified, fully integrated end-to-end through API contracts, database persistence, and automated test coverage.
 2. **Educational Simulations (Interactive Lab):** Interactive pedagogical sandboxes that demonstrate mathematical and cryptographic protocols (e.g. Diffie-Hellman PSI, Byzantine median filtering, SecAgg dropout abort, DP epsilon tradeoffs) without claiming multi-tenant hardware enclave guarantees.
@@ -46,7 +46,7 @@ The implemented system strictly follows the verified cross-institution user jour
 $$\text{Institution Collaboration} \longrightarrow \text{Permitted Entity Matching (PSI)} \longrightarrow \text{Collaborative Risk Inference (VFL + SecAgg)} \longrightarrow \text{Case Investigation (Feature Attribution)} \longrightarrow \text{Accountable Action (Step-Up KYC)} \longrightarrow \text{Audit Verification (SHA-256 Ledger)}$$
 
 ### Scientific & Regulatory Claim Boundaries
-1. **Regulatory Compliance:** TRUSTMESH demonstrates technical alignment with privacy-by-design principles (GDPR Art. 25, DPDP Act 2023, Banking Secrecy) through zero raw PII exchange and local feature encoding. It does **not** claim formal certified compliance with specific legal regimes without external legal audit.
+1. **Regulatory Compliance:** PriviLink demonstrates technical alignment with privacy-by-design principles (GDPR Art. 25, DPDP Act 2023, Banking Secrecy) through zero raw PII exchange and local feature encoding. It does **not** claim formal certified compliance with specific legal regimes without external legal audit.
 2. **Cryptographic Guarantees:** Pairwise zero-sum masking and 256-bit Diffie-Hellman exponentiation are implemented mathematically. They do **not** claim side-channel resistance or post-quantum security.
 3. **Audit Ledger:** The audit ledger is **tamper-evident** via SHA-256 hash chaining, not immutable. A root administrator with direct write access to the host SQLite file could rewrite history forward; true immutability requires decentralized consensus or external write-once media (WORM).
 4. **Model Performance:** Real measured metrics on the test partition are **PR-AUC = 0.71, F1 = 0.56, ROC-AUC = 0.97** for the collaborative model vs **PR-AUC = 0.45** for Bank A alone. These figures reflect synthetic data generation parameters and are never falsified in the UI.

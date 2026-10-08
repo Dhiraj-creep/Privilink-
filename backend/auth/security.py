@@ -1,5 +1,5 @@
 """
-TRUSTMESH Authentication & Role-Based Access Control (RBAC)
+PriviLink Authentication & Role-Based Access Control (RBAC)
 Enforces server-side authorization across Risk Analyst, Institution Admin, Compliance Officer, and Network Admin.
 Prevents cross-institution data retrieval by unauthorized institution admins (HTTP 403 Forbidden).
 """
@@ -19,7 +19,7 @@ DEMO_USERS = [
     {
         "id": 1,
         "username": "analyst",
-        "email": "analyst@trustmesh.local",
+        "email": "analyst@privilink.local",
         "password": "Analyst2026!",
         "role": "RISK_ANALYST",
         "institution_id": None,
@@ -59,7 +59,7 @@ DEMO_USERS = [
     {
         "id": 5,
         "username": "compliance",
-        "email": "compliance@trustmesh.local",
+        "email": "compliance@privilink.local",
         "password": "Compliance2026!",
         "role": "COMPLIANCE_OFFICER",
         "institution_id": None,
@@ -69,7 +69,7 @@ DEMO_USERS = [
     {
         "id": 6,
         "username": "admin",
-        "email": "admin@trustmesh.local",
+        "email": "admin@privilink.local",
         "password": "NetworkAdmin2026!",
         "role": "NETWORK_ADMIN",
         "institution_id": None,

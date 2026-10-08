@@ -1,5 +1,5 @@
 """
-TRUSTMESH Complete System Orchestrator
+PriviLink Complete System Orchestrator
 Launches:
 1. Coordinator Central API (Port 8000)
 2. Bank A Sovereign Node (Port 8001)
@@ -35,17 +35,17 @@ from backend.config import (
 def ensure_data_seeded():
     """Verify that databases exist; if not, automatically seed them."""
     if not COORDINATOR_DB_PATH.exists():
-        print("[TRUSTMESH] Database not found. Seeding initial environment...")
+        print("[PriviLink] Database not found. Seeding initial environment...")
         from scripts.seed_data import seed_all
         seed_all()
     else:
-        print("[TRUSTMESH] Verified existing data stores.")
+        print("[PriviLink] Verified existing data stores.")
 
 
 def probe_endpoint(name: str, url: str, timeout: float = 1.0) -> bool:
     """Attempt HTTP GET request against service endpoint."""
     try:
-        req = urllib.request.Request(url, headers={"User-Agent": "Trustmesh-HealthProbe/1.0"})
+        req = urllib.request.Request(url, headers={"User-Agent": "PriviLink-HealthProbe/1.0"})
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             return resp.status in (200, 304)
     except Exception:
@@ -87,7 +87,7 @@ def verify_cluster_readiness(max_attempts: int = 15, delay: float = 0.8) -> bool
 
 def main():
     print("=" * 72)
-    print("  TRUSTMESH: PRIVACY-PRESERVING RISK INTELLIGENCE FEDERATION")
+    print("  PriviLink: PRIVACY-PRESERVING RISK INTELLIGENCE FEDERATION")
     print("  System Orchestrator — Starting all components...")
     print("=" * 72)
 
@@ -155,7 +155,7 @@ def main():
                     print(f"[WARNING] {name} exited unexpectedly (code {proc.returncode}).")
 
     except KeyboardInterrupt:
-        print("\n[TRUSTMESH] Stopping all processes cleanly...")
+        print("\n[PriviLink] Stopping all processes cleanly...")
     finally:
         for name, proc in processes:
             try:

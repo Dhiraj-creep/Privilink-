@@ -1,5 +1,5 @@
 """
-TRUSTMESH Database Manager
+PriviLink Database Manager
 Manages isolated SQLite databases for Coordinator and Independent Participant Nodes (Bank A, Insurer B, Lender C).
 Provides connection helpers and table schemas.
 """

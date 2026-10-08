@@ -1,5 +1,5 @@
 """
-Regression and Boundary Enforcement Test Suite for TRUSTMESH.
+Regression and Boundary Enforcement Test Suite for PriviLink.
 Validates:
 1. Real bounded node health probes (does not falsely claim 'Online' just because SQLite file exists).
 2. Distributed Split Learning boundary: fails honestly with HTTP 503 when nodes are unreachable (no silent in-process fallback in distributed mode).
@@ -20,7 +20,7 @@ client = TestClient(app)
 
 
 def get_token(username: str, role: str, institution_id: str = None) -> str:
-    user = {"username": username, "email": f"{username}@trustmesh.network", "role": role}
+    user = {"username": username, "email": f"{username}@privilink.network", "role": role}
     if institution_id:
         user["institution_id"] = institution_id
     return create_session_token(user)
@@ -99,7 +99,7 @@ def test_production_safety_assertions():
     are strictly rejected.
     """
     # Test assertion logic from backend.config
-    insecure_key = "trustmesh-local-evaluation-insecure-demo-secret-key-2026"
+    insecure_key = "privilink-local-evaluation-insecure-demo-secret-key-2026"
 
     def check_production_config(env, allow_demo, secret):
         if env == "production":

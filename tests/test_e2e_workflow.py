@@ -1,5 +1,5 @@
 """
-TRUSTMESH End-to-End Core Workflow Smoke Test
+PriviLink End-to-End Core Workflow Smoke Test
 Validates the complete 6-stage user journey and security boundaries:
 1. Institution collaboration & cluster health check
 2. Permitted entity matching (Diffie-Hellman PSI)

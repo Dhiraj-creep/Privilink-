@@ -76,7 +76,7 @@ export const TOUR_STEPS = [
     tab: 'overview',
     title: 'The Bottom Line',
     speakerPitch: 'Institutions don’t need to share customer data. They only need to share privacy-preserving intelligence.',
-    takeaway: 'TRUSTMESH: Share intelligence. Not customer data. Ready for evaluation by technical judges.',
+    takeaway: 'PriviLink: Shared intelligence. Protected data. Ready for evaluation by technical judges.',
     badge: 'Step 10 of 10 • Conclusion'
   }
 ];

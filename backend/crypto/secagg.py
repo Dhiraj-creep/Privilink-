@@ -1,5 +1,5 @@
 """
-TRUSTMESH Secure Aggregation (SecAgg v2.1)
+PriviLink Secure Aggregation (SecAgg v2.1)
 Numerical implementation of pairwise zero-sum random masking for collaborative multi-party aggregation.
 Enables central coordinator to compute sum of client vectors without observing any individual vector.
 Includes explicit dropout detection and abort handling.

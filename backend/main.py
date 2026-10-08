@@ -1,5 +1,5 @@
 """
-TRUSTMESH Central Coordinator API
+PriviLink Central Coordinator API
 FastAPI backend service coordinating cross-institution risk intelligence,
 enforcing RBAC boundaries, executing cryptographic privacy protocols,
 and persisting tamper-evident audit chains.
@@ -27,7 +27,7 @@ from backend.config import (
     INSURER_B_DB_PATH,
     LENDER_C_DB_PATH,
     CORS_ORIGINS,
-    TRUSTMESH_ENV,
+    PRIVILINK_ENV,
 )
 from backend.ml.vfl_engine import DistributedInferenceUnavailableError
 from backend.crypto.dp_engine import apply_gaussian_dp, byzantine_filter_updates
@@ -56,13 +56,13 @@ from backend.storage.db import COORDINATOR_DB_PATH
 
 # FastAPI App
 app = FastAPI(
-    title="TRUSTMESH Risk Intelligence Core",
-    description="Privacy-Preserving Cross-Institution Risk Intelligence (VFL, SecAgg, DP-SGD, PSI)",
+    title="PriviLink Risk Intelligence Core",
+    description="PriviLink: Shared intelligence. Protected data. Privacy-Preserving Cross-Institution Risk Intelligence (VFL, SecAgg, DP-SGD, PSI)",
     version="1.0.0"
 )
 
 # CORS Middleware for React frontend
-cors_allowed = ["*"] if TRUSTMESH_ENV != "production" else CORS_ORIGINS
+cors_allowed = ["*"] if PRIVILINK_ENV != "production" else CORS_ORIGINS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_allowed,
@@ -566,7 +566,7 @@ def reset_sandbox_audit_ledger(user: Dict[str, Any] = Depends(get_current_user))
 def health_check():
     return {
         "status": "healthy",
-        "service": "TRUSTMESH Risk Intelligence Core",
+        "service": "PriviLink Risk Intelligence Core",
         "version": "1.0.0",
         "storage": "Persistent SQLite",
         "isolation": "Sovereign Node Data Stores Verified"

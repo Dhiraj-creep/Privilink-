@@ -1,5 +1,5 @@
 """
-TRUSTMESH Seed & Reset Script
+PriviLink Seed & Reset Script
 Populates coordinator database, independent participant node databases (Bank A, Insurer B, Lender C),
 trains the VFL model, evaluates real metrics, and generates a tamper-evident audit ledger.
 Run anytime to restore the judges' demo to a known, pristine state.
@@ -378,9 +378,9 @@ def seed_databases():
     audit_chain._create_genesis()
     initial_events = [
         {"actor": "BANK_A_NODE", "role": "NODE", "action": "LOCAL_MODEL_UPDATE_GENERATED", "target": "BANK_A", "details": "Local model update generated with DP-SGD noise (epsilon=1.5, clip=1.0)", "inst": "BANK_A", "privacy": "Protected (DP epsilon=1.5)", "result": "Accepted (Norm 0.82 <= 1.0)"},
-        {"actor": "SECAGG_COORDINATOR", "role": "COORDINATOR", "action": "SECURE_AGGREGATION_COMPLETED", "target": "GLOBAL_ROUND_27", "details": "Zero-knowledge blinded aggregation finalized: Pairwise masks canceled (sum M_i = 0)", "inst": "TRUSTMESH Aggregator", "privacy": "Zero-Knowledge Blind Aggregation", "result": "Success (Round 27 consolidated)"},
+        {"actor": "SECAGG_COORDINATOR", "role": "COORDINATOR", "action": "SECURE_AGGREGATION_COMPLETED", "target": "GLOBAL_ROUND_27", "details": "Zero-knowledge blinded aggregation finalized: Pairwise masks canceled (sum M_i = 0)", "inst": "PriviLink Aggregator", "privacy": "Zero-Knowledge Blind Aggregation", "result": "Success (Round 27 consolidated)"},
         {"actor": "INSURER_B_NODE", "role": "NODE", "action": "RISK_SIGNAL_RECEIVED", "target": "INSURER_B", "details": "Differentially private latent embedding broadcast", "inst": "INSURER_B", "privacy": "Protected (Encrypted representation)", "result": "Accepted (Cosine similarity nominal)"},
-        {"actor": "TRUSTMESH_NETWORK", "role": "SYSTEM", "action": "BENCHMARK_INITIALIZATION", "target": "POPULATION", "details": "1,500 synthetic entities registered across 3 connected institutions", "inst": "TRUSTMESH Network", "privacy": "Minimum Disclosure Rule Applied", "result": "Telemetry Nominal"}
+        {"actor": "PRIVILINK_NETWORK", "role": "SYSTEM", "action": "BENCHMARK_INITIALIZATION", "target": "POPULATION", "details": "1,500 synthetic entities registered across 3 connected institutions", "inst": "PriviLink Network", "privacy": "Minimum Disclosure Rule Applied", "result": "Telemetry Nominal"}
     ]
     for ev in initial_events:
         audit_chain.append_event(
@@ -396,7 +396,7 @@ def seed_databases():
 
     verify_res = audit_chain.verify_chain()
     print(f"      Audit chain initialized and verified: {verify_res['message']} (Total Events: {verify_res['total_events']})")
-    print("\nSUCCESS: All TRUSTMESH databases and model artifacts have been seeded successfully!")
+    print("\nSUCCESS: All PriviLink databases and model artifacts have been seeded successfully!")
 
 
 seed_all = seed_databases

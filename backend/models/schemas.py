@@ -1,5 +1,5 @@
 """
-TRUSTMESH Pydantic Schemas
+PriviLink Pydantic Schemas
 Validated API request and response schemas for FastAPI.
 """
 

@@ -1,5 +1,5 @@
 /**
- * TRUSTMESH Numerical & Data Formatting Utilities
+ * PriviLink Numerical & Data Formatting Utilities
  * Provides consistent typography, precision, and localization for enterprise risk analytics.
  * Zero guessing: ratios vs. scaled percentages are strictly distinguished by explicit flags.
  */

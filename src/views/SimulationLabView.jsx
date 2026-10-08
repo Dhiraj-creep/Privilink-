@@ -333,7 +333,7 @@ export default function SimulationLabView({
               </div>
 
               <div style={{ padding: '14px', backgroundColor: 'var(--success-light)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--success-border)', fontSize: '0.735rem' }}>
-                <strong style={{ color: 'var(--success-text)' }}>TRUSTMESH (DP + SecAgg)</strong>
+                <strong style={{ color: 'var(--success-text)' }}>PriviLink (DP + SecAgg)</strong>
                 <p style={{ color: 'var(--success-text)', marginTop: '4px', lineHeight: 1.45 }}>
                   • Leakage Risk: <strong>Reduced / Negligible</strong><br/>
                   • DP Gaussian noise masks rows<br/>

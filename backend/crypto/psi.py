@@ -1,5 +1,5 @@
 """
-TRUSTMESH Private Set Intersection (PSI)
+PriviLink Private Set Intersection (PSI)
 Implements commutative Diffie-Hellman (Pohlig-Hellman) exponentiation over a 256-bit safe prime.
 Allows institutions to discover shared customer entity tokens (e.g. ENTITY-7F21) without exchanging plaintext PII.
 """

@@ -51,7 +51,7 @@ export default function LandingPageView({ onEnterApp, onStartTour }) {
           </div>
           <div>
             <span style={{ fontWeight: 800, fontSize: '16px', color: 'var(--text-primary)', letterSpacing: '-0.02em', display: 'block', lineHeight: 1.1 }}>
-              TRUSTMESH
+              PriviLink
             </span>
             <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 500 }}>
               Cross-Institution Risk Intelligence
@@ -117,8 +117,8 @@ export default function LandingPageView({ onEnterApp, onStartTour }) {
             letterSpacing: '-0.03em',
             marginBottom: '20px'
           }}>
-            Share intelligence.<br />
-            <span style={{ color: 'var(--primary)' }}>Not customer data.</span>
+            Shared intelligence.<br />
+            <span style={{ color: 'var(--primary)' }}>Protected data.</span>
           </h1>
 
           <p style={{
@@ -383,7 +383,7 @@ export default function LandingPageView({ onEnterApp, onStartTour }) {
         color: 'var(--text-muted)'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-          <strong style={{ color: 'var(--text-primary)' }}>TRUSTMESH Platform</strong>
+          <strong style={{ color: 'var(--text-primary)' }}>PriviLink Platform</strong>
           <span>•</span>
           <span>Academic-Grade Proof-of-Concept</span>
           <span>•</span>

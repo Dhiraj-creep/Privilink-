@@ -1,5 +1,5 @@
 """
-TRUSTMESH Synthetic Dataset Generator
+PriviLink Synthetic Dataset Generator
 Generates reproducible, vertically partitioned synthetic data across Bank A, Insurer B, and Lender C.
 Reflects genuine multi-view weak-signal convergence:
 In isolation, each institution's local features have high overlap between normal variance and systemic stress (PR-AUC ~0.65 - 0.72).

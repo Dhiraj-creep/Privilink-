@@ -1,5 +1,5 @@
 """
-TRUSTMESH Cryptographic Audit Chain
+PriviLink Cryptographic Audit Chain
 Implements a tamper-evident SHA-256 hash chain for regulatory compliance and auditability.
 Each event is canonically serialized, hashed with SHA-256 (64 hex characters), and cryptographically linked to the preceding event.
 """
@@ -85,8 +85,8 @@ class AuditChain:
             "role": "SYSTEM",
             "action": "LEDGER_GENESIS_INITIALIZATION",
             "target_id": "NETWORK_ROOT",
-            "details": "TRUSTMESH Genesis Cryptographic Audit Ledger Initialized",
-            "institution": "TRUSTMESH Network",
+            "details": "PriviLink Genesis Cryptographic Audit Ledger Initialized",
+            "institution": "PriviLink Network",
             "privacy_status": "Zero-Knowledge Root",
             "result": "Genesis Established",
             "prev_hash": self.GENESIS_PREV_HASH,
@@ -135,7 +135,7 @@ class AuditChain:
         action: str,
         target_id: str,
         details: str,
-        institution: str = "TRUSTMESH Network",
+        institution: str = "PriviLink Network",
         privacy_status: str = "Protected",
         result: str = "Success",
         timestamp: Optional[str] = None

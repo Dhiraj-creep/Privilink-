@@ -1,4 +1,4 @@
-// TRUSTMESH Synthetic Demonstration Dataset
+// PriviLink Synthetic Demonstration Dataset
 // Strictly non-PII, synthetic risk indicators and institutional representations
 
 export const INSTITUTIONS = {
@@ -126,7 +126,7 @@ export const GLOBAL_MODEL_METRICS = {
       weakness: 'Blind to real-time payroll stability & insurance losses'
     },
     {
-      institution: 'TRUSTMESH Collaborative Model',
+      institution: 'PriviLink Collaborative Model',
       features: 'Unified Privacy-Preserving Risk Representations',
       prAuc: 0.87,
       f1Score: 0.81,
@@ -349,7 +349,7 @@ export const INITIAL_AUDIT_LOGS = [
     timestamp: '09:41:18',
     date: '2026-09-26',
     event: 'Secure aggregation completed',
-    institution: 'TRUSTMESH Aggregator',
+    institution: 'PriviLink Aggregator',
     privacyStatus: 'Zero-Knowledge Blind Aggregation',
     result: 'Success (Round 27 consolidated)',
     hash: '0x14d0...e98a',
@@ -371,7 +371,7 @@ export const INITIAL_AUDIT_LOGS = [
     timestamp: '09:42:25',
     date: '2026-09-26',
     event: 'Collaborative anomaly escalated',
-    institution: 'TRUSTMESH Network',
+    institution: 'PriviLink Network',
     privacyStatus: 'Minimum Disclosure Rule Applied',
     result: 'CASE-10482 Flagged (Confidence: 87%)',
     hash: '0x55e1...99bc',

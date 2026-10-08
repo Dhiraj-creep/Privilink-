@@ -3,14 +3,14 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.backend
-    container_name: trustmesh-coordinator
+    container_name: privilink-coordinator
     ports:
       - "8000:8000"
     environment:
-      - TRUSTMESH_ENV=production
-      - TRUSTMESH_MODE=distributed
-      - TRUSTMESH_SECRET_KEY=trustmesh-production-strong-security-key-2026-vfl
-      - TRUSTMESH_ALLOW_DEMO_SHORTCUTS=false
+      - PRIVILINK_ENV=production
+      - PRIVILINK_MODE=distributed
+      - PRIVILINK_SECRET_KEY=privilink-production-strong-security-key-2026-vfl
+      - PRIVILINK_ALLOW_DEMO_SHORTCUTS=false
       - INTERNAL_SERVICE_KEY=trustmesh-internal-node-secret-2026
       - BANK_A_URL=http://bank-a:8001
       - INSURER_B_URL=http://insurer-b:8002
@@ -28,7 +28,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.backend
-    container_name: trustmesh-node-bank-a
+    container_name: privilink-node-bank-a
     command: ["python", "backend/run_nodes.py", "BANK_A"]
     ports:
       - "8001:8001"
@@ -43,7 +43,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.backend
-    container_name: trustmesh-node-insurer-b
+    container_name: privilink-node-insurer-b
     command: ["python", "backend/run_nodes.py", "INSURER_B"]
     ports:
       - "8002:8002"
@@ -58,7 +58,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.backend
-    container_name: trustmesh-node-lender-c
+    container_name: privilink-node-lender-c
     command: ["python", "backend/run_nodes.py", "LENDER_C"]
     ports:
       - "8003:8003"
@@ -73,7 +73,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.frontend
-    container_name: trustmesh-frontend
+    container_name: privilink-frontend
     ports:
       - "5173:80"
     depends_on:

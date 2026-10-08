@@ -1,5 +1,5 @@
 """
-TRUSTMESH Demo Reset Script
+PriviLink Demo Reset Script
 Restores all 4 databases, retrains models, regenerates verified audit chain,
 and leaves the system in a pristine benchmark state for judging.
 """
@@ -16,7 +16,7 @@ from scripts.seed_data import seed_all
 
 if __name__ == "__main__":
     print("=" * 65)
-    print("  TRUSTMESH: DEMO STATE RESET & DATA STORE RE-SEEDING")
+    print("  PriviLink: DEMO STATE RESET & DATA STORE RE-SEEDING")
     print("=" * 65)
     seed_all()
     print("\n[SUCCESS] System reset complete. Ready for evaluation by judges.\n")

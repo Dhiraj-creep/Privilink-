@@ -1,5 +1,5 @@
 /**
- * TRUSTMESH Priority Queue Prioritization Engine
+ * PriviLink Priority Queue Prioritization Engine
  * Implements a deterministic, documented risk prioritization rule:
  * 
  * Hierarchy:

@@ -50,7 +50,7 @@ export default function ModelCollaborationView() {
               weakness: 'Blind to real-time cash flow and claim histories'
             },
             {
-              institution: 'TRUSTMESH Collaborative VFL Model',
+              institution: 'PriviLink Collaborative VFL Model',
               features: 'All 12 vertically-partitioned cross-institutional features',
               prAuc: collab.pr_auc !== undefined ? Number(collab.pr_auc.toFixed(3)) : GLOBAL_MODEL_METRICS.globalMetrics.prAuc,
               f1Score: collab.f1 !== undefined ? Number(collab.f1.toFixed(3)) : GLOBAL_MODEL_METRICS.globalMetrics.f1Score,
@@ -133,7 +133,7 @@ export default function ModelCollaborationView() {
         <div className="card-header">
           <div>
             <h3 style={{ fontSize: '0.98rem', fontWeight: 700, color: 'var(--primary-dark)' }}>
-              Isolated Local Models vs TRUSTMESH Collaborative Model
+              Isolated Local Models vs PriviLink Collaborative Model
             </h3>
             <p style={{ fontSize: '0.765rem', color: 'var(--text-secondary)' }}>
               Synthetic benchmark for prototype demonstration — not production performance.
@@ -145,7 +145,7 @@ export default function ModelCollaborationView() {
         <div className="card-body">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {m.localMetricsComparison.map((item, idx) => {
-              const isCollaborative = item.institution.includes('TRUSTMESH');
+              const isCollaborative = item.institution.includes('PriviLink') || item.institution.includes('TRUSTMESH');
               return (
                 <div key={idx} style={{
                   padding: '18px',

@@ -1,5 +1,5 @@
 /**
- * TRUSTMESH Browser Workflow & End-to-End Client Lifecycle Test
+ * PriviLink Browser Workflow & End-to-End Client Lifecycle Test
  * Tests the complete end-to-end user journey matching the frontend UI flow:
  *
  * 1. Health & Cluster Discovery (Coordinator + 3 Sovereign Nodes)
@@ -20,7 +20,7 @@ import assert from 'node:assert/strict';
 
 const BASE_URL = process.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api';
 
-class TrustmeshBrowserClient {
+class PriviLinkBrowserClient {
   constructor(baseUrl) {
     this.baseUrl = baseUrl;
     this.token = null;
@@ -67,7 +67,7 @@ class TrustmeshBrowserClient {
 }
 
 test('End-to-End User Journey: From Cluster Discovery to Case Resolution and Audit Verification', async (t) => {
-  const client = new TrustmeshBrowserClient(BASE_URL);
+  const client = new PriviLinkBrowserClient(BASE_URL);
 
   await t.test('1. Cluster discovery and coordinator health check', async () => {
     const health = await client.request('/health');
@@ -91,7 +91,7 @@ test('End-to-End User Journey: From Cluster Discovery to Case Resolution and Aud
 
   await t.test('3. Reset demo scenario to baseline monitoring', async () => {
     // Compliance token needed for RESET
-    const compClient = new TrustmeshBrowserClient(BASE_URL);
+    const compClient = new PriviLinkBrowserClient(BASE_URL);
     await compClient.login('compliance', 'COMPLIANCE_OFFICER');
 
     const resetRes = await compClient.request('/simulation/run', {

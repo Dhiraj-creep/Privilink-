@@ -1,6 +1,6 @@
-# TRUSTMESH
+# PriviLink
 ### Privacy-Preserving Cross-Institution Risk Intelligence
-> **“Share intelligence. Not customer data.”**
+> **“Shared intelligence. Protected data.”**
 
 [![Build Status](https://img.shields.io/badge/pytest-35%2F35%20passing-brightgreen.svg)]()
 [![Browser Tests](https://img.shields.io/badge/e2e%20browser-12%2F12%20passing-brightgreen.svg)]()
@@ -24,17 +24,17 @@ Financial institutions operate in siloed environments with non-overlapping fragm
 
 Under strict regulatory mandates (**GDPR, CCPA, Banking Secrecy, DPDP Act 2023**), institutions **cannot pool or centralize raw customer data**. Fraudsters and high-risk entities exploit this exact institutional blind spot through loan stacking, bust-out fraud, and multi-platform balance depletion.
 
-**TRUSTMESH** is an academic-grade, reproducible end-to-end prototype enabling sovereign institutions to collaboratively train models and query risk intelligence **WITHOUT ever centralizing, pooling, or disclosing raw customer records**.
+**PriviLink** is an academic-grade, reproducible end-to-end prototype enabling sovereign institutions to collaboratively train models and query risk intelligence **WITHOUT ever centralizing, pooling, or disclosing raw customer records**.
 
 ---
 
 ## 2. System Architecture & Sovereign Isolation
 
-TRUSTMESH enforces physical and process-level isolation across four independent SQLite databases and network ports:
+PriviLink enforces physical and process-level isolation across four independent SQLite databases and network ports:
 
 ```
 +---------------------------------------------------------------------------------------------------+
-|                                     TRUSTMESH FEDERATION ARCHITECTURE                             |
+|                                     PRIVILINK FEDERATION ARCHITECTURE                             |
 +---------------------------------------------------------------------------------------------------+
 
    +--------------------------+    +--------------------------+    +--------------------------+
@@ -86,7 +86,7 @@ TRUSTMESH enforces physical and process-level isolation across four independent 
 
 All 15 deficiencies identified during initial codebase audit have been resolved:
 
-| # | Audit Finding | Initial Defect | TRUSTMESH Implementation & Fix | Status |
+| # | Audit Finding | Initial Defect | PriviLink Implementation & Fix | Status |
 | :-: | :--- | :--- | :--- | :-: |
 | **1** | **Backend & Persistence** | Pure frontend with synthetic fixtures; no persistence | Complete FastAPI backend, 4 persistent SQLite DBs, schemas, stable IDs, and UTC timestamps | Verified |
 | **2** | **Risk Scores & Metrics** | Hardcoded metrics and invented percentages | Trained Vertical Federated Learning engine (`vfl_engine.py`) outputting real PR-AUC, F1, and SHAP-like attributions | Verified |
@@ -142,7 +142,7 @@ All 15 deficiencies identified during initial codebase audit have been resolved:
   - **Bank A Local Baseline Alone:** PR-AUC = 0.45, F1 = 0.50, ROC-AUC = 0.95
   - **Insurer B Local Baseline Alone:** PR-AUC = 0.38, F1 = 0.51, ROC-AUC = 0.93
   - **Lender C Local Baseline Alone:** PR-AUC = 0.72, F1 = 0.57, ROC-AUC = 0.97
-  - **TRUSTMESH Collaborative Model:** **PR-AUC = 0.71, F1 = 0.56, ROC-AUC = 0.97**
+  - **PriviLink Collaborative Model:** **PR-AUC = 0.71, F1 = 0.56, ROC-AUC = 0.97**
   - *Observation:* The collaborative model achieves high discriminatory power (ROC-AUC = 0.97) by synthesizing independent weak signals into a joint anomaly representation with zero customer data sharing.
 
 ### 4.2 Numerical Secure Aggregation (SecAgg v2.1)
@@ -184,7 +184,7 @@ All 15 deficiencies identified during initial codebase audit have been resolved:
 
 ## 5. Demo User Accounts & Access Matrix
 
-TRUSTMESH enforces server-side Role-Based Access Control (RBAC). The following pre-configured demo accounts are available:
+PriviLink enforces server-side Role-Based Access Control (RBAC). The following pre-configured demo accounts are available:
 
 | Username | Password | Role | Institution | Permissions |
 | :--- | :--- | :--- | :--- | :--- |
@@ -351,7 +351,7 @@ python scripts/reset_demo.py
 > **Answer:** We intentionally use the academically precise term *tamper-evident*. While each event is cryptographically linked to the previous event via SHA-256 hashes from a genesis block—making any historical edit immediately detectable by downstream hash mismatches—a centralized administrator with raw write access to the SQLite file could theoretically re-calculate the entire hash chain from the modified block forward. True immutability requires decentralized consensus, write-once media (WORM), or notarization onto an external public ledger.
 
 #### Q5: "How do you resolve the conflict between hiding updates with SecAgg and inspecting them for Byzantine poisoning?"
-> **Answer:** This is a fundamental challenge in federated learning: if the coordinator cannot see individual updates, it cannot directly inspect them for malicious poisoning. In TRUSTMESH, this is resolved via a two-layer defense:
+> **Answer:** This is a fundamental challenge in federated learning: if the coordinator cannot see individual updates, it cannot directly inspect them for malicious poisoning. In PriviLink, this is resolved via a two-layer defense:
 > 1. In standard SecAgg mode, individual privacy is mathematically absolute;
 > 2. In Byzantine robust mode, coordinate-wise median filtering is applied to verify that aggregate updates do not diverge beyond statistical expectation ($3\sigma$). In production, verifiable secure aggregation (using Zero-Knowledge Succinct Non-Interactive Arguments of Knowledge or Secure Multi-Party Computation) allows clients to prove their updates satisfy $L_2$-norm constraints without disclosing the update values.
 
@@ -371,4 +371,4 @@ python scripts/reset_demo.py
 4. **Homomorphic Encryption:** Utilizing Paillier or CKKS lattice-based cryptography via Microsoft SEAL for encrypted intermediate representations.
 
 ---
-*TRUSTMESH — Share intelligence. Not customer data.*
+*PriviLink — Shared intelligence. Protected data.*

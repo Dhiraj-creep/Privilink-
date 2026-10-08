@@ -344,7 +344,7 @@ export default function Sidebar({
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span style={{ fontWeight: 800, fontSize: '15px', color: 'var(--text-primary)' }}>
-                  TRUSTMESH
+                  PriviLink
                 </span>
                 <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Navigation</span>
               </div>

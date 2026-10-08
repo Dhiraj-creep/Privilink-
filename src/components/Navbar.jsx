@@ -222,7 +222,7 @@ export default function Navbar({
             </div>
             <div>
               <span style={{ fontWeight: 800, fontSize: '14px', color: 'var(--text-primary)', letterSpacing: '-0.02em', display: 'block', lineHeight: 1.1 }}>
-                TRUSTMESH
+                PriviLink
               </span>
               <span className="tm-desktop-only" style={{ fontSize: '9px', fontWeight: 600, color: 'var(--text-muted)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
                 Risk Intelligence

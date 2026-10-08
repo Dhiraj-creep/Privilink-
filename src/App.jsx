@@ -131,7 +131,7 @@ export default function App() {
       .then(async () => {
         setBackendConnected(true);
         // Ensure default authenticated session if none exists and user has not explicitly logged out
-        if (!api.getToken() && localStorage.getItem('trustmesh_logged_out') !== 'true') {
+        if (!api.getToken() && localStorage.getItem('privilink_logged_out') !== 'true' && localStorage.getItem('trustmesh_logged_out') !== 'true') {
           const authRes = await api.autoLoginDefault().catch(() => null);
           if (authRes && authRes.user) {
             setCurrentUser(authRes.user);

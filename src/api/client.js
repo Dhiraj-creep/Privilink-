@@ -1,5 +1,5 @@
 /**
- * TRUSTMESH API Client
+ * PriviLink API Client
  * Provides persistent HTTP communication with the FastAPI backend.
  * Falls back gracefully to local synthetic baseline if backend is offline.
  */
@@ -10,19 +10,24 @@ const API_BASE = (typeof import.meta !== 'undefined' && import.meta.env && impor
 
 class ApiClient {
   constructor() {
-    this.token = localStorage.getItem('trustmesh_token') || null;
-    this.currentUser = JSON.parse(localStorage.getItem('trustmesh_user') || 'null');
+    this.token = localStorage.getItem('privilink_token') || localStorage.getItem('trustmesh_token') || null;
+    this.currentUser = JSON.parse(
+      localStorage.getItem('privilink_user') || localStorage.getItem('trustmesh_user') || 'null'
+    );
   }
 
   setSession(token, user) {
     this.token = token;
     this.currentUser = user;
     if (token) {
-      localStorage.setItem('trustmesh_token', token);
-      localStorage.setItem('trustmesh_user', JSON.stringify(user));
+      localStorage.setItem('privilink_token', token);
+      localStorage.setItem('privilink_user', JSON.stringify(user));
+      localStorage.removeItem('privilink_logged_out');
       localStorage.removeItem('trustmesh_logged_out');
     } else {
+      localStorage.removeItem('privilink_token');
       localStorage.removeItem('trustmesh_token');
+      localStorage.removeItem('privilink_user');
       localStorage.removeItem('trustmesh_user');
     }
   }
@@ -37,7 +42,7 @@ class ApiClient {
 
   async ensureAuthenticated() {
     if (this.token) return;
-    if (localStorage.getItem('trustmesh_logged_out') === 'true') {
+    if (localStorage.getItem('privilink_logged_out') === 'true' || localStorage.getItem('trustmesh_logged_out') === 'true') {
       return; // Do not auto-login if user explicitly logged out
     }
     if (!this._loginPromise) {
@@ -91,6 +96,7 @@ class ApiClient {
 
   logout() {
     this.setSession(null, null);
+    localStorage.setItem('privilink_logged_out', 'true');
     localStorage.setItem('trustmesh_logged_out', 'true');
   }
 
@@ -103,7 +109,7 @@ class ApiClient {
   }
 
   async autoLoginDefault() {
-    if (localStorage.getItem('trustmesh_logged_out') === 'true') {
+    if (localStorage.getItem('privilink_logged_out') === 'true' || localStorage.getItem('trustmesh_logged_out') === 'true') {
       return null;
     }
     if (!this.token) {

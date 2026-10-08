@@ -1,5 +1,5 @@
 """
-TRUSTMESH Insurer B Participant Node
+PriviLink Insurer B Participant Node
 Maintains sovereign custody over Insurer B's private policy and claim records and local schema.
 Enforces local data isolation: raw records NEVER leave the node.
 """

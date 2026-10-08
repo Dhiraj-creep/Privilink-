@@ -1,5 +1,5 @@
 """
-TRUSTMESH Lender C Participant Node
+PriviLink Lender C Participant Node
 Maintains sovereign custody over Lender C's private consumer credit applications and local schema.
 Enforces local data isolation: raw records NEVER leave the node.
 """

@@ -1,5 +1,5 @@
 """
-TRUSTMESH Bank A Participant Node
+PriviLink Bank A Participant Node
 Maintains sovereign custody over Bank A's private transactional records and local schema.
 Enforces local data isolation: raw records NEVER leave the node.
 """

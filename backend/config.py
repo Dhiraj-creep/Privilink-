@@ -1,5 +1,5 @@
 """
-TRUSTMESH Configuration
+PriviLink Configuration
 Centralized configuration parameters, directory paths, ports, seeds, environment variables,
 and cryptographic constants.
 """
@@ -20,13 +20,17 @@ LENDER_C_DB_PATH = DATA_STORE_DIR / "nodes" / "lender_c" / "lender_c.db"
 ML_ARTIFACTS_DIR = BACKEND_DIR / "ml" / "artifacts"
 
 # Environment and Execution Mode
-TRUSTMESH_ENV = os.getenv("TRUSTMESH_ENV", "development").lower()
-TRUSTMESH_MODE = os.getenv("TRUSTMESH_MODE", "distributed").lower()
+PRIVILINK_ENV = os.getenv("PRIVILINK_ENV", os.getenv("TRUSTMESH_ENV", "development")).lower()
+PRIVILINK_MODE = os.getenv("PRIVILINK_MODE", os.getenv("TRUSTMESH_MODE", "distributed")).lower()
+# Backward-compatibility aliases
+TRUSTMESH_ENV = PRIVILINK_ENV
+TRUSTMESH_MODE = PRIVILINK_MODE
+
 ALLOW_DEMO_SHORTCUTS = (
-    os.getenv("TRUSTMESH_ALLOW_DEMO_SHORTCUTS", "true" if TRUSTMESH_ENV != "production" else "false").lower()
+    os.getenv("PRIVILINK_ALLOW_DEMO_SHORTCUTS", os.getenv("TRUSTMESH_ALLOW_DEMO_SHORTCUTS", "true" if PRIVILINK_ENV != "production" else "false")).lower()
     in ("true", "1", "yes")
 )
-INTERNAL_SERVICE_KEY = os.getenv("INTERNAL_SERVICE_KEY", "trustmesh-internal-node-secret-2026")
+INTERNAL_SERVICE_KEY = os.getenv("INTERNAL_SERVICE_KEY", os.getenv("PRIVILINK_INTERNAL_SERVICE_KEY", "privilink-internal-node-secret-2026"))
 
 # Server Ports & URLs
 COORDINATOR_PORT = int(os.getenv("COORDINATOR_PORT", "8000"))
@@ -74,17 +78,18 @@ DH_PRIME = int(DH_PRIME_HEX, 16)
 DH_GENERATOR = 2
 
 # JWT / Secret Key Management
-DEFAULT_DEV_SECRET = "trustmesh-local-evaluation-insecure-demo-secret-key-2026"
-AUTH_SECRET_KEY = os.getenv("TRUSTMESH_SECRET_KEY", DEFAULT_DEV_SECRET)
-AUTH_ALGORITHM = os.getenv("TRUSTMESH_AUTH_ALGORITHM", "HS256")
+DEFAULT_DEV_SECRET = "privilink-local-evaluation-insecure-demo-secret-key-2026"
+LEGACY_DEV_SECRET = "trustmesh-local-evaluation-insecure-demo-secret-key-2026"
+AUTH_SECRET_KEY = os.getenv("PRIVILINK_SECRET_KEY", os.getenv("TRUSTMESH_SECRET_KEY", DEFAULT_DEV_SECRET))
+AUTH_ALGORITHM = os.getenv("PRIVILINK_AUTH_ALGORITHM", os.getenv("TRUSTMESH_AUTH_ALGORITHM", "HS256"))
 
-if TRUSTMESH_ENV == "production":
-    if not AUTH_SECRET_KEY or AUTH_SECRET_KEY == DEFAULT_DEV_SECRET:
+if PRIVILINK_ENV == "production":
+    if not AUTH_SECRET_KEY or AUTH_SECRET_KEY in (DEFAULT_DEV_SECRET, LEGACY_DEV_SECRET):
         raise RuntimeError(
-            "Production Security Failure: Essential secret 'TRUSTMESH_SECRET_KEY' is missing or set to default dev key. "
+            "Production Security Failure: Essential secret 'PRIVILINK_SECRET_KEY' (or 'TRUSTMESH_SECRET_KEY') is missing or set to default dev key. "
             "Set a cryptographically strong key in environment before starting in production mode."
         )
     if ALLOW_DEMO_SHORTCUTS:
         raise RuntimeError(
-            "Production Security Failure: Demo shortcuts (TRUSTMESH_ALLOW_DEMO_SHORTCUTS) cannot be enabled in production."
+            "Production Security Failure: Demo shortcuts (PRIVILINK_ALLOW_DEMO_SHORTCUTS) cannot be enabled in production."
         )

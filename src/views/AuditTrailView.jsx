@@ -263,7 +263,7 @@ export default function AuditTrailView({ dynamicLogs = [] }) {
               <option value="Bank">Bank A Only</option>
               <option value="Insurer">Insurer B Only</option>
               <option value="Lender">Lender C Only</option>
-              <option value="Network">TRUSTMESH Network</option>
+              <option value="Network">PriviLink Network</option>
             </select>
           </div>
 
